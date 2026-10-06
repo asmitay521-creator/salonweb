@@ -81,7 +81,7 @@ export default function App() {
         }
       } else if (hash === '#/customer-dash' || path.endsWith('/customer-dash')) {
         setCurrentView('customer-dash');
-      } else if (hash === '' || hash === '#/' || hash === '#home' || path === '/' || path.endsWith('/index.html')) {
+      } else {
         setCurrentView('customer');
       }
     };
