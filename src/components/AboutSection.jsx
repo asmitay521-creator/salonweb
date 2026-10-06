@@ -30,7 +30,7 @@ export default function AboutSection({ onOpenBooking, onNavigate }) {
           <div className="arch-photo-frame arch-left animated-float-left">
             <div className="arch-img-inner">
               <img 
-                src="assets/images/about_stylist_female.jpg" 
+                src="/assets/images/about_stylist_female.jpg" 
                 alt="Looks Professional Master Stylist precision haircutting" 
                 className="arch-img"
               />
@@ -45,7 +45,7 @@ export default function AboutSection({ onOpenBooking, onNavigate }) {
           <div className="arch-photo-frame arch-right animated-float-right">
             <div className="arch-img-inner">
               <img 
-                src="assets/images/about_barber_male.jpg" 
+                src="/assets/images/about_barber_male.jpg" 
                 alt="Looks Professional Master Barber grooming client" 
                 className="arch-img"
               />

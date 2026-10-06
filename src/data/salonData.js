@@ -8,6 +8,7 @@ export const INITIAL_SALON_DATA = {
   brandSubtitle: "UNISEX SALON",
   supportPhone: "+91 98111 22334",
   supportEmail: "info@looksprofessional.com",
+  reviews: [],
   salons: [
     {
       id: "salon_01",

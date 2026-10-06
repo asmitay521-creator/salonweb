@@ -11,7 +11,7 @@ const HERO_SLIDES = [
   // 1. Bridal & Women's Hair Artistry (Bright, warm luxury salon)
   {
     id: 1,
-    mediaUrl: 'assets/images/salon_hero.jpg',
+    mediaUrl: '/assets/images/salon_hero.jpg',
     badge: 'HAUTE COUTURE BRIDAL & RED CARPET MAKEUP',
     titlePrefix: 'Elegance in',
     titleTeal: 'Every Detail.',

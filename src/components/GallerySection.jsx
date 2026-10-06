@@ -19,7 +19,7 @@ const GALLERY_ITEMS = [
     category: "bridal",
     categoryLabel: "Bridal Couture",
     tag: "HAUTE BRIDAL",
-    image: "assets/images/luxury_bridal_makeover.jpg",
+    image: "/assets/images/luxury_bridal_makeover.jpg",
     desc: "Dewy glass skin, emerald-matched eye contours, handcrafted floral hair updo, and 16-hour sweatproof finish.",
     duration: "240 Mins",
     stylist: "Pooja Sharma (Bridal Director)"
