@@ -1,0 +1,34 @@
+{
+  "name": "looks-professional-salon",
+  "version": "1.0.0",
+  "description": "Looks Professional Unisex Salon",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --open",
+    "start": "vite --open",
+    "build": "vite build",
+    "preview": "vite preview --open"
+  },
+  "keywords": [
+    "salon",
+    "spa",
+    "pos",
+    "booking"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.1.1",
+    "live-server": "^1.2.2",
+    "vite": "^8.3.1"
+  },
+  "dependencies": {
+    "chart.js": "^4.5.1",
+    "firebase": "^12.19.0",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
+    "lucide-react": "^1.49.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  }
+}
