@@ -25,7 +25,7 @@ import { Bell } from 'lucide-react';
 export default function App() {
   const { data, toasts } = useSalon();
 
-  // Navigation route: 'customer' | 'customer-dash' | 'contact' | 'admin-login' | 'admin' | 'superadmin'
+  // Navigation route: 'customer' | 'customer-dash' | 'contact' | 'admin-login' | 'admin' | 'employee'
   const [currentView, setCurrentView] = useState('customer');
 
   // Modals
@@ -34,7 +34,7 @@ export default function App() {
   const [preselectedStylist, setPreselectedStylist] = useState(null);
   const [selectedInvoiceApt, setSelectedInvoiceApt] = useState(null);
 
-  // Sync with URL Route (/admin, /admim, #/admin, /contact, /superadmin, /customer-dash)
+  // Sync with URL Route (/admin, /admim, #/admin, /contact, /employee, /customer-dash)
   useEffect(() => {
     const handleUrlRoute = () => {
       const hash = (window.location.hash || '').toLowerCase();
@@ -57,23 +57,23 @@ export default function App() {
         hash === '#/admim' ||
         hash === '#admim';
 
-      const isSuperAdminPath =
-        path.endsWith('/superadmin') ||
-        path.endsWith('/superadmin/') ||
-        hash === '#/superadmin' ||
-        hash === '#superadmin';
+      const isEmployeePath =
+        path.endsWith('/employee') ||
+        path.endsWith('/employee/') ||
+        hash === '#/employee' ||
+        hash === '#employee';
 
       if (isContactPath) {
         setCurrentView('contact');
-      } else if (isSuperAdminPath) {
-        if (auth && auth.role === 'superadmin') {
-          setCurrentView('superadmin');
+      } else if (isEmployeePath) {
+        if (auth && auth.role === 'employee') {
+          setCurrentView('employee');
         } else {
           setCurrentView('admin-login');
         }
       } else if (isAdminPath) {
-        if (auth && auth.role === 'superadmin') {
-          setCurrentView('superadmin');
+        if (auth && auth.role === 'employee') {
+          setCurrentView('employee');
         } else if (auth && auth.role === 'admin') {
           setCurrentView('admin');
         } else {
@@ -103,7 +103,7 @@ export default function App() {
     else if (view === 'contact') window.location.hash = '#/contact';
     else if (view === 'admin-login') window.location.hash = '#/admin';
     else if (view === 'admin') window.location.hash = '#/admin';
-    else if (view === 'superadmin') window.location.hash = '#/superadmin';
+    else if (view === 'employee') window.location.hash = '#/employee';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -223,7 +223,7 @@ export default function App() {
         />
       )}
 
-      {/* 3. Unified Admin & Super Admin Login (/admin) */}
+      {/* 3. Unified Admin & Employee Login (/admin) */}
       {currentView === 'admin-login' && (
         <AdminLogin
           onLoginSuccess={(role) => navigateTo(role)}
@@ -235,13 +235,13 @@ export default function App() {
       {currentView === 'admin' && (
         <AdminPanel
           onReturnHome={() => navigateTo('customer')}
-          onGoSuperAdmin={() => navigateTo('superadmin')}
+          onGoEmployee={() => navigateTo('employee')}
           onViewInvoice={(apt) => setSelectedInvoiceApt(apt)}
         />
       )}
 
-      {/* 5. Super Admin HQ Panel */}
-      {currentView === 'superadmin' && (
+      {/* 5. Employee Panel */}
+      {currentView === 'employee' && (
         <SuperAdminPanel
           onReturnHome={() => navigateTo('customer')}
           onGoBranchAdmin={() => navigateTo('admin')}

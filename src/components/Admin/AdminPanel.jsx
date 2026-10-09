@@ -13,10 +13,10 @@ import {
   PhoneCall, ExternalLink, RefreshCw, Layers, UserPlus, ShoppingBag, Truck,
   FileText, CheckCircle, Percent, Camera, UploadCloud, Barcode, User, Save,
   Mail, MapPin, Building2, CreditCard, Hash, ShoppingCart, ArrowRight, ArrowDown,
-  ThumbsUp, ThumbsDown, HelpCircle, CalendarPlus, List, Columns, Flame
+  ThumbsUp, ThumbsDown, HelpCircle, CalendarPlus, List, Columns, Flame, Lock
 } from 'lucide-react';
 
-export default function AdminPanel({ onReturnHome, onGoSuperAdmin, onViewInvoice }) {
+export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }) {
   const {
     data, getCurrentSalon, updateAppointmentStatus,
     generatePOSInvoice, addStock, addProduct, updateProduct, deleteProduct, addStaff, updateStaff, deleteStaff, toggleStaffStatus,
@@ -166,6 +166,8 @@ export default function AdminPanel({ onReturnHome, onGoSuperAdmin, onViewInvoice
   const [newStaff, setNewStaff] = useState({
     name: '',
     employeeId: '',
+    username: '',
+    password: '',
     phone: '',
     email: '',
     dob: '',
@@ -1249,17 +1251,6 @@ export default function AdminPanel({ onReturnHome, onGoSuperAdmin, onViewInvoice
               <PlusCircle size={15} /> Fast POS Billing
             </button>
 
-            <div className="topbar-user-badge">
-              <img
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80"
-                alt="Admin"
-                className="user-avatar"
-              />
-              <div className="user-details">
-                <span className="user-name">Admin</span>
-                <span className="user-role">Super Admin</span>
-              </div>
-            </div>
           </div>
         </header>
 
@@ -1306,71 +1297,106 @@ export default function AdminPanel({ onReturnHome, onGoSuperAdmin, onViewInvoice
 
               <div className="details-two-column-grid">
                 {/* Left Column: Customer Profile & Metadata */}
-                <div className="details-card customer-profile-card">
-                  <div className="customer-hero-strip">
-                    <div className="brand-logo-icon" style={{ width: 44, height: 44, fontSize: 16, borderRadius: '50%' }}>
+                <div style={{
+                  background: 'linear-gradient(145deg, #ffffff, #fcfcfd)',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '20px',
+                  padding: '32px',
+                  boxShadow: '0 20px 40px -15px rgba(0,0,0,0.05), 0 0 10px rgba(0,0,0,0.01)',
+                  height: 'fit-content',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}>
+                  {/* Decorative Gradient */}
+                  <div style={{
+                    position: 'absolute', top: 0, left: 0, right: 0, height: '4px',
+                    background: 'linear-gradient(90deg, #D4A373, #B58555)'
+                  }}></div>
+
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '20px',
+                    paddingBottom: '24px',
+                    borderBottom: '1px dashed #e2e8f0',
+                    marginBottom: '24px'
+                  }}>
+                    <div style={{
+                      width: '64px', height: '64px', borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #D4A373, #B58555)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '24px', fontWeight: '800', color: '#fff',
+                      boxShadow: '0 8px 16px rgba(212, 163, 115, 0.4)',
+                      border: '3px solid #fff'
+                    }}>
                       {selectedAppointmentDetails.customerName?.slice(0, 2).toUpperCase() || 'CU'}
                     </div>
                     <div>
-                      <h3 className="cust-name">{selectedAppointmentDetails.customerName || 'Walk-in Guest'}</h3>
-                      <p className="cust-phone">{selectedAppointmentDetails.customerPhone || 'N/A'}</p>
+                      <h3 style={{ fontSize: '22px', fontWeight: '800', color: '#0F172A', margin: '0 0 6px 0', letterSpacing: '-0.5px' }}>
+                        {selectedAppointmentDetails.customerName || 'Walk-in Guest'}
+                      </h3>
+                      <p style={{ fontSize: '14px', color: '#64748B', margin: 0, display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '500' }}>
+                        <Phone size={14} color="#D4A373" /> {selectedAppointmentDetails.customerPhone || 'N/A'}
+                      </p>
                     </div>
                   </div>
 
-                  <div className="metadata-list">
-                    <div className="meta-row">
-                      <span className="meta-label">📅 Date</span>
-                      <span className="meta-val">{selectedAppointmentDetails.date || 'Today'}</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #f1f5f9', transition: 'transform 0.2s' }}>
+                      <span style={{ fontSize: '13px', fontWeight: '600', color: '#64748B', display: 'flex', alignItems: 'center', gap: '10px' }}><CalendarDays size={16} color="#0EA5E9"/> Date</span>
+                      <span style={{ fontSize: '14.5px', fontWeight: '700', color: '#0F172A' }}>{selectedAppointmentDetails.date || 'Today'}</span>
                     </div>
-                    <div className="meta-row">
-                      <span className="meta-label">⏰ Time</span>
-                      <span className="meta-val">{selectedAppointmentDetails.time || 'N/A'}</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #f1f5f9', transition: 'transform 0.2s' }}>
+                      <span style={{ fontSize: '13px', fontWeight: '600', color: '#64748B', display: 'flex', alignItems: 'center', gap: '10px' }}><Clock size={16} color="#F59E0B"/> Time</span>
+                      <span style={{ fontSize: '14.5px', fontWeight: '700', color: '#0F172A' }}>{selectedAppointmentDetails.time || 'N/A'}</span>
                     </div>
-                    <div className="meta-row">
-                      <span className="meta-label">💇 Stylist</span>
-                      <span className="meta-val highlight-gold">{selectedAppointmentDetails.staffName || 'Assigned Stylist'}</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #f1f5f9', transition: 'transform 0.2s' }}>
+                      <span style={{ fontSize: '13px', fontWeight: '600', color: '#64748B', display: 'flex', alignItems: 'center', gap: '10px' }}><Scissors size={16} color="#D4A373"/> Stylist</span>
+                      <span style={{ fontSize: '14.5px', fontWeight: '800', color: '#D4A373' }}>{selectedAppointmentDetails.staffName || 'Assigned Stylist'}</span>
                     </div>
-                    <div className="meta-row">
-                      <span className="meta-label">⚡ Status</span>
-                      <span className={`status-pill status-${(selectedAppointmentDetails.status || 'confirmed').toLowerCase().replace(' ', '-')}`}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #f1f5f9', transition: 'transform 0.2s' }}>
+                      <span style={{ fontSize: '13px', fontWeight: '600', color: '#64748B', display: 'flex', alignItems: 'center', gap: '10px' }}><CheckCircle2 size={16} color="#10B981"/> Status</span>
+                      <span className={`status-pill status-${(selectedAppointmentDetails.status || 'confirmed').toLowerCase().replace(' ', '-')}`} style={{ margin: 0, padding: '4px 12px', fontSize: '12px' }}>
                         {selectedAppointmentDetails.status || 'Confirmed'}
                       </span>
                     </div>
-                    <div className="meta-row">
-                      <span className="meta-label">💳 Payment</span>
-                      <span className="meta-val">{selectedAppointmentDetails.paymentStatus || 'Pending'} ({selectedAppointmentDetails.paymentMethod || 'Pay at Salon'})</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #f1f5f9', transition: 'transform 0.2s' }}>
+                      <span style={{ fontSize: '13px', fontWeight: '600', color: '#64748B', display: 'flex', alignItems: 'center', gap: '10px' }}><CreditCard size={16} color="#6366F1"/> Payment</span>
+                      <span style={{ fontSize: '14px', fontWeight: '700', color: '#0F172A' }}>{selectedAppointmentDetails.paymentStatus || 'Pending'} <span style={{ color: '#94a3b8', fontWeight: '500', fontSize: '12px' }}>({selectedAppointmentDetails.paymentMethod || 'Pay at Salon'})</span></span>
                     </div>
-                    <div className="meta-row">
-                      <span className="meta-label">📝 Notes</span>
-                      <span className="meta-val">{selectedAppointmentDetails.notes || 'No special notes recorded.'}</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '14px 16px', background: '#fcfcfd', borderRadius: '12px', border: '1px dashed #cbd5e1', flexDirection: 'column', gap: '10px', marginTop: '4px' }}>
+                      <span style={{ fontSize: '13px', fontWeight: '700', color: '#475569', display: 'flex', alignItems: 'center', gap: '8px' }}><FileText size={15} color="#8B5CF6"/> Notes & Requirements</span>
+                      <span style={{ fontSize: '14px', color: '#334155', lineHeight: '1.5', fontStyle: 'italic' }}>{selectedAppointmentDetails.notes || 'No special notes recorded for this appointment.'}</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Right Column: Services, Products Used, Payment & Incentive Calculation */}
-                <div className="details-card-stack">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                   {/* Services Table */}
-                  <div className="details-card">
-                    <div className="card-header-row">
-                      <h4 className="card-sub-title">Booked Services</h4>
+                  <div style={{
+                    background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)'
+                  }}>
+                    <div style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '16px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{ background: 'rgba(212, 163, 115, 0.1)', padding: '8px', borderRadius: '8px' }}><Scissors size={18} color="#D4A373"/></div>
+                      <h4 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#0F172A' }}>Booked Services</h4>
                     </div>
 
-                    <table className="looks-inner-table">
+                    <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px' }}>
                       <thead>
-                        <tr>
-                          <th>Service</th>
-                          <th>Duration</th>
-                          <th>Price</th>
-                          <th>Stylist Commission</th>
+                        <tr style={{ textAlign: 'left', color: '#64748B', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                          <th style={{ padding: '0 12px 8px 12px', fontWeight: '700' }}>Service</th>
+                          <th style={{ padding: '0 12px 8px 12px', fontWeight: '700' }}>Duration</th>
+                          <th style={{ padding: '0 12px 8px 12px', fontWeight: '700' }}>Price</th>
+                          <th style={{ padding: '0 12px 8px 12px', fontWeight: '700' }}>Commission</th>
                         </tr>
                       </thead>
                       <tbody>
-                        <tr>
-                          <td><strong>{selectedAppointmentDetails.serviceName || 'Salon Service'}</strong></td>
-                          <td>{selectedAppointmentDetails.duration || 45} mins</td>
-                          <td><strong className="price-bold">₹{(selectedAppointmentDetails.amount || 0).toLocaleString()}</strong></td>
-                          <td>
-                            <span className="incentive-badge">
+                        <tr style={{ background: '#f8fafc', borderRadius: '8px' }}>
+                          <td style={{ padding: '16px 12px', color: '#0F172A', fontWeight: '700', borderRadius: '8px 0 0 8px' }}>{selectedAppointmentDetails.serviceName || 'Salon Service'}</td>
+                          <td style={{ padding: '16px 12px', color: '#475569', fontSize: '14px' }}>{selectedAppointmentDetails.duration || 45} mins</td>
+                          <td style={{ padding: '16px 12px', color: '#0F172A', fontWeight: '800', fontSize: '15px' }}>₹{(selectedAppointmentDetails.amount || 0).toLocaleString()}</td>
+                          <td style={{ padding: '16px 12px', borderRadius: '0 8px 8px 0' }}>
+                            <span style={{ display: 'inline-block', background: 'rgba(16, 185, 129, 0.1)', color: '#10B981', padding: '4px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: '700' }}>
                               {(() => {
                                 const staff = (data.staff || []).find(s => s.id === selectedAppointmentDetails.staffId || s.name === selectedAppointmentDetails.staffName);
                                 const rate = staff?.commissionRate || 12;
@@ -1385,10 +1411,15 @@ export default function AdminPanel({ onReturnHome, onGoSuperAdmin, onViewInvoice
                   </div>
 
                   {/* Products Used */}
-                  <div className="details-card">
-                    <div className="card-header-row">
-                      <h4 className="card-sub-title">Products Used on Floor</h4>
-                      <button className="btn-text-gold" onClick={() => setShowAddUsageModal(true)}>+ Log Usage</button>
+                  <div style={{
+                    background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)'
+                  }}>
+                    <div style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '16px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ background: 'rgba(56, 189, 248, 0.1)', padding: '8px', borderRadius: '8px' }}><Package size={18} color="#0EA5E9"/></div>
+                        <h4 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#0F172A' }}>Products Used on Floor</h4>
+                      </div>
+                      <button style={{ background: 'transparent', border: '1px solid #D4A373', color: '#D4A373', fontWeight: '600', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', transition: '0.2s' }} onClick={() => setShowAddUsageModal(true)}>+ Log Usage</button>
                     </div>
                     {(() => {
                       const logs = (data.productUsageLogs || []).filter(l =>
@@ -1397,19 +1428,19 @@ export default function AdminPanel({ onReturnHome, onGoSuperAdmin, onViewInvoice
                       );
                       if (logs.length === 0) {
                         return (
-                          <div className="empty-panel-msg" style={{ padding: '10px 0', fontSize: '13px', color: 'var(--color-slate-gray)' }}>
+                          <div style={{ padding: '20px', textAlign: 'center', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1', color: '#64748B', fontSize: '14px', fontStyle: 'italic' }}>
                             No floor consumption logged for this service yet.
                           </div>
                         );
                       }
                       return (
-                        <div className="products-used-list">
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
                           {logs.map(log => (
                             (log.productsUsed || []).map((p, idx) => (
-                              <div className="product-usage-pill" key={idx}>
-                                <span className="prod-icon">🧴</span>
-                                <span className="prod-name">{p.name}</span>
-                                <span className="prod-qty">Qty: {p.qty}</span>
+                              <div key={idx} style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '20px', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '16px' }}>🧴</span>
+                                <span style={{ fontSize: '14px', fontWeight: '600', color: '#334155' }}>{p.name}</span>
+                                <span style={{ fontSize: '12px', fontWeight: '700', color: '#0EA5E9', background: 'rgba(56, 189, 248, 0.1)', padding: '2px 6px', borderRadius: '4px' }}>Qty: {p.qty}</span>
                               </div>
                             ))
                           ))}
@@ -1419,36 +1450,48 @@ export default function AdminPanel({ onReturnHome, onGoSuperAdmin, onViewInvoice
                   </div>
 
                   {/* Payment Summary & Method */}
-                  <div className="details-card">
-                    <h4 className="card-sub-title">Payment Summary</h4>
-                    <div className="summary-calc-box">
-                      <div className="calc-row">
+                  <div style={{
+                    background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)'
+                  }}>
+                    <div style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '16px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{ background: 'rgba(99, 102, 241, 0.1)', padding: '8px', borderRadius: '8px' }}><CreditCard size={18} color="#6366F1"/></div>
+                      <h4 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#0F172A' }}>Payment Summary</h4>
+                    </div>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748B', fontSize: '14.5px' }}>
                         <span>Service Subtotal</span>
-                        <span>₹{(selectedAppointmentDetails.amount || 0).toLocaleString()}</span>
+                        <span style={{ fontWeight: '600', color: '#334155' }}>₹{(selectedAppointmentDetails.amount || 0).toLocaleString()}</span>
                       </div>
                       {(selectedAppointmentDetails.discount > 0) && (
-                        <div className="calc-row discount-row">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#10B981', fontSize: '14.5px' }}>
                           <span>Discount {selectedAppointmentDetails.couponCode ? `(${selectedAppointmentDetails.couponCode})` : ''}</span>
-                          <span>- ₹{(selectedAppointmentDetails.discount || 0).toLocaleString()}</span>
+                          <span style={{ fontWeight: '700' }}>- ₹{(selectedAppointmentDetails.discount || 0).toLocaleString()}</span>
                         </div>
                       )}
-                      <div className="calc-row">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748B', fontSize: '14.5px' }}>
                         <span>GST Tax (18%)</span>
-                        <span>+ ₹{(selectedAppointmentDetails.tax || Math.round((selectedAppointmentDetails.amount || 0) * 0.18)).toLocaleString()}</span>
+                        <span style={{ fontWeight: '600', color: '#334155' }}>+ ₹{(selectedAppointmentDetails.tax || Math.round((selectedAppointmentDetails.amount || 0) * 0.18)).toLocaleString()}</span>
                       </div>
-                      <div className="calc-row total-row">
-                        <span>Final Bill Amount</span>
-                        <span className="final-total">₹{(selectedAppointmentDetails.finalAmount || selectedAppointmentDetails.amount || 0).toLocaleString()}</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', background: '#f8fafc', padding: '16px', borderRadius: '10px', border: '1px dashed #cbd5e1', marginTop: '8px' }}>
+                        <span style={{ fontWeight: '800', color: '#0F172A', fontSize: '16px' }}>Final Bill Amount</span>
+                        <span style={{ fontWeight: '800', color: '#0F172A', fontSize: '20px' }}>₹{(selectedAppointmentDetails.finalAmount || selectedAppointmentDetails.amount || 0).toLocaleString()}</span>
                       </div>
                     </div>
 
-                    <div className="payment-method-selector-section">
-                      <span className="selector-label">Payment Method</span>
-                      <div className="method-pill-group">
+                    <div>
+                      <span style={{ fontSize: '13px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px', display: 'block' }}>Payment Method</span>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
                         {['UPI', 'Card', 'Cash', 'Online'].map(m => (
                           <button
                             key={m}
-                            className={`method-pill ${(selectedDetailPaymentMethod || selectedAppointmentDetails.paymentMethod || 'UPI') === m ? 'active' : ''}`}
+                            style={{
+                              padding: '10px', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s',
+                              background: (selectedDetailPaymentMethod || selectedAppointmentDetails.paymentMethod || 'UPI') === m ? 'linear-gradient(135deg, #D4A373, #B58555)' : '#f1f5f9',
+                              color: (selectedDetailPaymentMethod || selectedAppointmentDetails.paymentMethod || 'UPI') === m ? '#fff' : '#64748B',
+                              border: 'none',
+                              boxShadow: (selectedDetailPaymentMethod || selectedAppointmentDetails.paymentMethod || 'UPI') === m ? '0 4px 10px rgba(212, 163, 115, 0.3)' : 'none'
+                            }}
                             onClick={() => setSelectedDetailPaymentMethod(m)}
                           >
                             {m}
@@ -1459,22 +1502,27 @@ export default function AdminPanel({ onReturnHome, onGoSuperAdmin, onViewInvoice
                   </div>
 
                   {/* Incentive Calculation Breakdown */}
-                  <div className="details-card incentive-calc-card">
-                    <h4 className="card-sub-title">Incentive Calculation</h4>
+                  <div style={{
+                    background: 'linear-gradient(145deg, #f0fdf4, #ffffff)', border: '1px solid #bbf7d0', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)'
+                  }}>
+                    <div style={{ borderBottom: '1px solid #dcfce7', paddingBottom: '16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{ background: '#dcfce7', padding: '8px', borderRadius: '8px' }}><TrendingUp size={18} color="#16A34A"/></div>
+                      <h4 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#14532d' }}>Incentive Calculation</h4>
+                    </div>
                     {(() => {
                       const staff = (data.staff || []).find(s => s.id === selectedAppointmentDetails.staffId || s.name === selectedAppointmentDetails.staffName);
                       const rate = staff?.commissionRate || 12;
                       const baseAmt = selectedAppointmentDetails.amount || 0;
                       const incTotal = Math.round(baseAmt * (rate / 100));
                       return (
-                        <div className="incentive-breakdown-list">
-                          <div className="inc-row">
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#166534', fontSize: '14.5px' }}>
                             <span>{selectedAppointmentDetails.serviceName || 'Service'} ({rate}%)</span>
-                            <span>₹{incTotal.toLocaleString()}</span>
+                            <span style={{ fontWeight: '600' }}>₹{incTotal.toLocaleString()}</span>
                           </div>
-                          <div className="inc-row total-inc-row">
-                            <span>Total Incentive Accrued</span>
-                            <span className="inc-total-val">₹{incTotal.toLocaleString()}</span>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', background: '#dcfce7', padding: '12px 16px', borderRadius: '8px', marginTop: '4px' }}>
+                            <span style={{ fontWeight: '800', color: '#14532d', fontSize: '15px' }}>Total Incentive Accrued</span>
+                            <span style={{ fontWeight: '800', color: '#16A34A', fontSize: '16px' }}>₹{incTotal.toLocaleString()}</span>
                           </div>
                         </div>
                       );
@@ -1805,11 +1853,7 @@ export default function AdminPanel({ onReturnHome, onGoSuperAdmin, onViewInvoice
                               <Percent size={13} strokeWidth={2.5} /> Incentive Rule
                             </span>
                           </th>
-                          <th>
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#16A34A', fontWeight: 800 }}>
-                              <CheckCircle2 size={13} strokeWidth={2.5} /> Status
-                            </span>
-                          </th>
+
                           <th style={{ textAlign: 'center' }}>
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#E11D48', fontWeight: 800 }}>
                               <Sparkles size={13} strokeWidth={2.5} /> Actions
@@ -1864,7 +1908,7 @@ export default function AdminPanel({ onReturnHome, onGoSuperAdmin, onViewInvoice
                                   })()}
                                 </span>
                               </td>
-                              <td><span className={`status-pill ${srv.status === 'Inactive' ? 'status-low-stock' : 'status-completed'}`}>{srv.status || 'Active'}</span></td>
+
                               <td>
                                 <div className="action-buttons-cell">
                                   <button className="btn-table-action" onClick={() => showToast(`Edit service: ${srv.name}`)} title="Edit">
@@ -3404,11 +3448,7 @@ export default function AdminPanel({ onReturnHome, onGoSuperAdmin, onViewInvoice
                       <table className="looks-master-table">
                         <thead>
                           <tr>
-                            <th>
-                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#64748B', fontWeight: 800 }}>
-                                <Camera size={13} strokeWidth={2.5} /> Photo
-                              </span>
-                            </th>
+
                             <th>
                               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#7C3AED', fontWeight: 800 }}>
                                 <User size={13} strokeWidth={2.5} /> Name
@@ -3471,7 +3511,7 @@ export default function AdminPanel({ onReturnHome, onGoSuperAdmin, onViewInvoice
                             if (filtered.length === 0) {
                               return (
                                 <tr>
-                                  <td colSpan={8} className="empty-table-cell">
+                                  <td colSpan={7} className="empty-table-cell">
                                     <div className="looks-empty-state">
                                       <Users size={32} />
                                       <h4>No employees found</h4>
@@ -3483,9 +3523,7 @@ export default function AdminPanel({ onReturnHome, onGoSuperAdmin, onViewInvoice
                             }
                             return filtered.map(emp => (
                               <tr key={emp.id}>
-                                <td>
-                                  <img src={emp.photo || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'} alt={emp.name} className="table-row-thumb circle" />
-                                </td>
+
                                 <td><strong>{emp.name}</strong></td>
                                 <td>{emp.role}</td>
                                 <td>{emp.specialization || 'Hair, Colour, Spa'}</td>
@@ -5413,12 +5451,9 @@ export default function AdminPanel({ onReturnHome, onGoSuperAdmin, onViewInvoice
                           return filtered.map(c => (
                             <tr key={c.id}>
                               <td>
-                                <div className="emp-mini-profile">
-                                  <img src={c.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'} alt={c.name} className="emp-thumb circle" />
-                                  <div>
-                                    <strong>{c.name}</strong><br />
-                                    <span className="text-sub-muted">{c.email}</span>
-                                  </div>
+                                <div>
+                                  <strong>{c.name}</strong><br />
+                                  <span className="text-sub-muted">{c.email}</span>
                                 </div>
                               </td>
                               <td><strong>{c.phone}</strong></td>
@@ -6686,7 +6721,8 @@ export default function AdminPanel({ onReturnHome, onGoSuperAdmin, onViewInvoice
                       { id: 'employee', label: 'Employee Reports' },
                       { id: 'incentive', label: 'Incentive Ledger' },
                       { id: 'inventory', label: 'Inventory Valuation' },
-                      { id: 'leads', label: 'Lead Conversions' }
+                      { id: 'leads', label: 'Lead Conversions' },
+                      { id: 'services', label: 'Service Report' }
                     ].map(st => {
                       const isActive = reportsSubTab === st.id;
                       return (
@@ -6842,6 +6878,56 @@ export default function AdminPanel({ onReturnHome, onGoSuperAdmin, onViewInvoice
                                   <td style={{ padding: '16px 20px', fontSize: '13.5px', fontWeight: 800, color: '#0F172A' }}>₹{r.total.toLocaleString('en-IN')}</td>
                                 </tr>
                               ))
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* SUBTAB: SERVICE REPORT */}
+                  {reportsSubTab === 'services' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+                      <div style={{
+                        background: '#FFFFFF',
+                        border: '1px solid #E2E8F0',
+                        borderRadius: '12px',
+                        overflow: 'hidden',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                        width: '100%',
+                        overflowX: 'auto'
+                      }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '780px' }}>
+                          <thead>
+                            <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
+                              <th style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>Date & Time</th>
+                              <th style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>Employee Name</th>
+                              <th style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>Customer Name</th>
+                              <th style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>Service Provided</th>
+                              <th style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>Amount (₹)</th>
+                              <th style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>Status</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {data.appointments.filter(a => a.status === 'Completed').length > 0 ? (
+                              data.appointments.filter(a => a.status === 'Completed').map(apt => (
+                                <tr key={apt.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                                  <td style={{ padding: '14px 20px', fontSize: '13px', color: '#334155' }}>{apt.date} {apt.time}</td>
+                                  <td style={{ padding: '14px 20px', fontSize: '13px', color: '#334155', fontWeight: 600 }}>{apt.staffName || 'Unknown Employee'}</td>
+                                  <td style={{ padding: '14px 20px', fontSize: '13px', color: '#0F172A', fontWeight: 600 }}>{apt.customerName}<br/><span style={{ fontSize: '11px', color: '#64748B', fontWeight: 400 }}>{apt.customerPhone}</span></td>
+                                  <td style={{ padding: '14px 20px', fontSize: '13px', color: '#334155' }}>{apt.serviceName}</td>
+                                  <td style={{ padding: '14px 20px', fontSize: '13px', color: '#0F172A', fontWeight: 700 }}>₹{apt.amount}</td>
+                                  <td style={{ padding: '14px 20px', fontSize: '13px' }}>
+                                    <span style={{ background: '#DCFCE7', color: '#16A34A', padding: '4px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 700 }}>{apt.status}</span>
+                                  </td>
+                                </tr>
+                              ))
+                            ) : (
+                              <tr>
+                                <td colSpan="6" style={{ padding: '30px', textAlign: 'center', color: '#64748B', fontSize: '13px' }}>
+                                  No completed services found.
+                                </td>
+                              </tr>
                             )}
                           </tbody>
                         </table>
@@ -8422,22 +8508,7 @@ export default function AdminPanel({ onReturnHome, onGoSuperAdmin, onViewInvoice
                 </div>
               </div>
 
-              <div className="form-group-looks">
-                <label style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '5px', background: 'rgba(22, 163, 74, 0.12)', color: '#16A34A' }}>
-                    <CheckCircle2 size={12} strokeWidth={2.5} />
-                  </span>
-                  <span>Status</span>
-                </label>
-                <select
-                  className="looks-input"
-                  value={newService.status || 'Active'}
-                  onChange={(e) => setNewService({ ...newService, status: e.target.value })}
-                >
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
-                </select>
-              </div>
+
 
               <button type="submit" className="btn-gold-action" style={{ width: '100%', marginTop: '6px' }}>
                 Add Service
@@ -8993,6 +9064,8 @@ export default function AdminPanel({ onReturnHome, onGoSuperAdmin, onViewInvoice
               setNewStaff({
                 name: '',
                 employeeId: '',
+                username: '',
+                password: '',
                 phone: '',
                 email: '',
                 dob: '',
@@ -9046,6 +9119,10 @@ export default function AdminPanel({ onReturnHome, onGoSuperAdmin, onViewInvoice
                             if (val.trim()) {
                               // If employeeId is empty or starts with EMP-, auto-generate sequential ID
                               let autoId = newStaff.employeeId;
+                              let firstName = val.split(' ')[0].toLowerCase();
+                              let genUsername = firstName ? `${firstName}@gmail.com` : '';
+                              let genPassword = firstName ? `${firstName}123` : '';
+                              
                               if (!autoId || autoId.startsWith('EMP-')) {
                                 const existingNums = (data.staff || [])
                                   .map(s => (s.employeeId || s.id || ''))
@@ -9055,9 +9132,10 @@ export default function AdminPanel({ onReturnHome, onGoSuperAdmin, onViewInvoice
                                 const maxNum = existingNums.length > 0 ? Math.max(...existingNums) : 100;
                                 autoId = `EMP-${String(Math.max(maxNum + 1, 101)).padStart(3, '0')}`;
                               }
-                              setNewStaff({ ...newStaff, name: val, employeeId: autoId });
+
+                              setNewStaff({ ...newStaff, name: val, employeeId: autoId, username: genUsername, password: genPassword });
                             } else {
-                              setNewStaff({ ...newStaff, name: val, employeeId: '' });
+                              setNewStaff({ ...newStaff, name: val, employeeId: '', username: '', password: '' });
                             }
                           }}
                           style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', paddingLeft: '38px', borderRadius: '8px', height: '40px' }}
@@ -9088,6 +9166,58 @@ export default function AdminPanel({ onReturnHome, onGoSuperAdmin, onViewInvoice
                           value={newStaff.employeeId}
                           onChange={(e) => setNewStaff({ ...newStaff, employeeId: e.target.value })}
                           style={{ background: '#F8FAFC', border: '1px solid #CBD5E1', paddingLeft: '38px', borderRadius: '8px', height: '40px', fontWeight: 700, color: '#0F172A' }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Username (Auto-generated) */}
+                    <div className="form-group-looks">
+                      <label style={{ fontSize: '13px', fontWeight: 700, color: '#1E293B', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '5px', background: 'rgba(59, 130, 246, 0.12)', color: '#3B82F6' }}>
+                          <User size={12} strokeWidth={2.5} />
+                        </span>
+                        <span>Username</span>
+                        {newStaff.username && (
+                          <span style={{ marginLeft: 'auto', fontSize: '11px', color: '#16A34A', background: '#DCFCE7', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
+                            ✓ Auto-generated
+                          </span>
+                        )}
+                      </label>
+                      <div style={{ position: 'relative' }}>
+                        <User size={16} color="#94A3B8" style={{ position: 'absolute', left: '12px', top: '12px' }} />
+                        <input
+                          type="text"
+                          readOnly
+                          className="looks-input"
+                          placeholder="Auto-generated"
+                          value={newStaff.username || ''}
+                          style={{ background: '#F8FAFC', border: '1px solid #CBD5E1', paddingLeft: '38px', borderRadius: '8px', height: '40px', fontWeight: 700, color: '#3B82F6' }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Password (Auto-generated) */}
+                    <div className="form-group-looks">
+                      <label style={{ fontSize: '13px', fontWeight: 700, color: '#1E293B', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '5px', background: 'rgba(239, 68, 68, 0.12)', color: '#EF4444' }}>
+                          <Lock size={12} strokeWidth={2.5} />
+                        </span>
+                        <span>Password</span>
+                        {newStaff.password && (
+                          <span style={{ marginLeft: 'auto', fontSize: '11px', color: '#16A34A', background: '#DCFCE7', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
+                            ✓ Auto-generated
+                          </span>
+                        )}
+                      </label>
+                      <div style={{ position: 'relative' }}>
+                        <Lock size={16} color="#94A3B8" style={{ position: 'absolute', left: '12px', top: '12px' }} />
+                        <input
+                          type="text"
+                          readOnly
+                          className="looks-input"
+                          placeholder="Auto-generated"
+                          value={newStaff.password || ''}
+                          style={{ background: '#F8FAFC', border: '1px solid #CBD5E1', paddingLeft: '38px', borderRadius: '8px', height: '40px', fontWeight: 700, color: '#EF4444' }}
                         />
                       </div>
                     </div>
@@ -9229,35 +9359,6 @@ export default function AdminPanel({ onReturnHome, onGoSuperAdmin, onViewInvoice
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px 18px' }}>
-                    {/* Role / Designation */}
-                    <div className="form-group-looks">
-                      <label style={{ fontSize: '13px', fontWeight: 700, color: '#1E293B', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '5px', background: 'rgba(13, 148, 136, 0.12)', color: '#0D9488' }}>
-                          <Award size={12} strokeWidth={2.5} />
-                        </span>
-                        <span>Role / Designation</span> <span style={{ color: '#EF4444' }}>*</span>
-                      </label>
-                      <div style={{ position: 'relative' }}>
-                        <Award size={16} color="#94A3B8" style={{ position: 'absolute', left: '12px', top: '12px' }} />
-                        <select
-                          required
-                          className="looks-input"
-                          value={newStaff.role}
-                          onChange={(e) => setNewStaff({ ...newStaff, role: e.target.value })}
-                          style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', paddingLeft: '38px', borderRadius: '8px', height: '40px' }}
-                        >
-                          <option value="">Select role</option>
-                          <option value="Senior Stylist">Senior Stylist</option>
-                          <option value="Master Hair Specialist">Master Hair Specialist</option>
-                          <option value="Bridal Makeup Artist">Bridal Makeup Artist</option>
-                          <option value="Skin & Spa Therapist">Skin & Spa Therapist</option>
-                          <option value="Nail Art Technician">Nail Art Technician</option>
-                          <option value="Salon Manager">Salon Manager</option>
-                          <option value="Front Desk Executive">Front Desk Executive</option>
-                        </select>
-                      </div>
-                    </div>
-
                     {/* Specialization */}
                     <div className="form-group-looks">
                       <label style={{ fontSize: '13px', fontWeight: 700, color: '#1E293B', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -9306,65 +9407,6 @@ export default function AdminPanel({ onReturnHome, onGoSuperAdmin, onViewInvoice
                       </div>
                     </div>
 
-                    {/* Employment Type */}
-                    <div className="form-group-looks">
-                      <label style={{ fontSize: '13px', fontWeight: 700, color: '#1E293B', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '5px', background: 'rgba(124, 58, 237, 0.12)', color: '#7C3AED' }}>
-                          <Clock size={12} strokeWidth={2.5} />
-                        </span>
-                        <span>Employment Type</span>
-                      </label>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', height: '40px' }}>
-                        {['Full Time', 'Part Time'].map(type => {
-                          const isSelected = newStaff.employmentType === type;
-                          return (
-                            <button
-                              key={type}
-                              type="button"
-                              onClick={() => setNewStaff({ ...newStaff, employmentType: type })}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '6px',
-                                border: isSelected ? '1.5px solid #0D9488' : '1px solid #E2E8F0',
-                                background: isSelected ? '#F0FDFA' : '#FFFFFF',
-                                color: isSelected ? '#0D9488' : '#64748B',
-                                borderRadius: '8px',
-                                fontWeight: isSelected ? 700 : 500,
-                                fontSize: '13px',
-                                cursor: 'pointer',
-                                transition: 'all 0.15s ease'
-                              }}
-                            >
-                              {isSelected && <Check size={14} color="#0D9488" strokeWidth={2.5} />}
-                              {type}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Salary */}
-                    <div className="form-group-looks">
-                      <label style={{ fontSize: '13px', fontWeight: 700, color: '#1E293B', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '5px', background: 'rgba(217, 119, 6, 0.12)', color: '#D97706' }}>
-                          <IndianRupee size={12} strokeWidth={2.5} />
-                        </span>
-                        <span>Salary</span>
-                      </label>
-                      <div style={{ position: 'relative' }}>
-                        <span style={{ position: 'absolute', left: '14px', top: '11px', color: '#94A3B8', fontWeight: 600, fontSize: '14px' }}>₹</span>
-                        <input
-                          type="number"
-                          className="looks-input"
-                          placeholder="Enter salary"
-                          value={newStaff.salary}
-                          onChange={(e) => setNewStaff({ ...newStaff, salary: e.target.value })}
-                          style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', paddingLeft: '34px', borderRadius: '8px', height: '40px' }}
-                        />
-                      </div>
-                    </div>
                   </div>
                 </div>
 
@@ -9424,134 +9466,7 @@ export default function AdminPanel({ onReturnHome, onGoSuperAdmin, onViewInvoice
 
                 {/* 4. OTHER */}
                 <div>
-                  <div style={{ paddingBottom: '8px', borderBottom: '1px solid #F1F5F9', marginBottom: '14px', marginTop: '6px' }}>
-                    <h4 style={{ margin: 0, fontSize: '13.5px', fontWeight: 700, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#475569' }}></span>
-                      Other
-                    </h4>
-                  </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px 18px', alignItems: 'start' }}>
-                    {/* Profile Photo */}
-                    <div className="form-group-looks">
-                      <label style={{ fontSize: '13px', fontWeight: 700, color: '#1E293B', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '5px', background: 'rgba(13, 148, 136, 0.12)', color: '#0D9488' }}>
-                          <Camera size={12} strokeWidth={2.5} />
-                        </span>
-                        <span>Profile Photo</span>
-                      </label>
-                      {newStaff.imageUrl ? (
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '12px',
-                          background: '#FFFFFF',
-                          border: '1px solid #CBD5E1',
-                          borderRadius: '10px',
-                          padding: '8px 12px',
-                          boxShadow: '0 1px 4px rgba(0,0,0,0.06)'
-                        }}>
-                          <img
-                            src={newStaff.imageUrl}
-                            alt="avatar preview"
-                            style={{ width: '42px', height: '42px', borderRadius: '8px', objectFit: 'cover', border: '1px solid #E2E8F0' }}
-                          />
-                          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-                            <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#1E293B', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {newStaff.imageFile?.name || 'profile_photo.jpg'}
-                            </span>
-                            <span style={{ fontSize: '11px', color: '#10B981', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 500 }}>
-                              <CheckCircle2 size={11} color="#10B981" /> Uploaded
-                            </span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setNewStaff({ ...newStaff, imageFile: null, imageUrl: null });
-                            }}
-                            style={{
-                              background: '#FEE2E2',
-                              border: 'none',
-                              borderRadius: '6px',
-                              width: '26px',
-                              height: '26px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              cursor: 'pointer',
-                              color: '#EF4444'
-                            }}
-                            title="Remove photo"
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        </div>
-                      ) : (
-                        <label style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          border: '1.5px dashed #CBD5E1',
-                          borderRadius: '10px',
-                          padding: '10px 14px',
-                          cursor: 'pointer',
-                          background: '#F8FAFC',
-                          transition: 'all 0.2s ease',
-                          height: '64px',
-                          boxSizing: 'border-box'
-                        }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748B' }}>
-                              <Camera size={18} />
-                            </div>
-                            <div>
-                              <div style={{ fontSize: '13px', fontWeight: 600, color: '#1E293B' }}>Upload photo</div>
-                              <div style={{ fontSize: '11px', color: '#94A3B8' }}>JPG, PNG (Max 2MB)</div>
-                            </div>
-                          </div>
-                          <UploadCloud size={18} color="#94A3B8" />
-                          <input
-                            type="file"
-                            accept="image/png, image/jpeg, image/webp"
-                            style={{ display: 'none' }}
-                            onChange={(e) => {
-                              if (e.target.files && e.target.files.length > 0) {
-                                const file = e.target.files[0];
-                                const reader = new FileReader();
-                                reader.onloadend = () => {
-                                  setNewStaff(prev => ({ ...prev, imageFile: file, imageUrl: reader.result }));
-                                };
-                                reader.readAsDataURL(file);
-                              }
-                            }}
-                          />
-                        </label>
-                      )}
-                    </div>
-
-                    {/* Notes (Optional) */}
-                    <div className="form-group-looks">
-                      <label style={{ fontSize: '13px', fontWeight: 700, color: '#1E293B', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '5px', background: 'rgba(71, 85, 105, 0.12)', color: '#475569' }}>
-                          <FileText size={12} strokeWidth={2.5} />
-                        </span>
-                        <span>Notes (Optional)</span>
-                      </label>
-                      <div style={{ position: 'relative' }}>
-                        <FileText size={16} color="#94A3B8" style={{ position: 'absolute', left: '12px', top: '12px' }} />
-                        <textarea
-                          className="looks-input"
-                          placeholder="Any additional notes about the employee..."
-                          rows={2}
-                          value={newStaff.notes}
-                          onChange={(e) => setNewStaff({ ...newStaff, notes: e.target.value })}
-                          style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', paddingLeft: '38px', borderRadius: '8px', resize: 'none', height: '64px', paddingTop: '10px' }}
-                        />
-                      </div>
-                    </div>
-                  </div>
                 </div>
 
               </div>
@@ -10695,15 +10610,7 @@ export default function AdminPanel({ onReturnHome, onGoSuperAdmin, onViewInvoice
                 </div>
               </div>
 
-              <div className="form-group-looks">
-                <label style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '5px', background: 'rgba(71, 85, 105, 0.12)', color: '#475569' }}>
-                    <FileText size={12} strokeWidth={2.5} />
-                  </span>
-                  <span>Notes / Preferences</span>
-                </label>
-                <textarea className="looks-input" rows={2} placeholder="Any preferences, allergies, or requirements..." value={newCust.notes || ''} onChange={(e) => setNewCust({ ...newCust, notes: e.target.value })}></textarea>
-              </div>
+
 
               <div style={{ display: 'flex', gap: '12px', marginTop: '6px' }}>
                 <button type="button" className="btn-secondary" onClick={() => setShowAddCustomerModal(false)} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #D1D5DB', background: 'white', cursor: 'pointer', fontWeight: 600 }}>Cancel</button>

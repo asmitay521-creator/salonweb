@@ -94,10 +94,10 @@ export const SalonProvider = ({ children }) => {
         if (savedUser && savedUser.email === fbUser.email) {
           setData(prev => ({ ...prev, currentUser: savedUser }));
         } else {
-          const isSuper = (fbUser.email || '').includes('superadmin');
+          const isSuper = (fbUser.email || '').includes('employee');
           const isAdmin = (fbUser.email || '').includes('admin');
           const session = {
-            role: isSuper ? 'superadmin' : (isAdmin ? 'admin' : 'customer'),
+            role: isSuper ? 'employee' : (isAdmin ? 'admin' : 'customer'),
             id: fbUser.uid,
             name: fbUser.displayName || (isSuper ? 'Super Admin HQ' : (isAdmin ? 'Branch Admin' : 'Customer Client')),
             email: fbUser.email || 'user@looksprofessional.com',
@@ -242,7 +242,7 @@ export const SalonProvider = ({ children }) => {
       couponCode: aptData.couponCode || "",
       paymentMethod: aptData.paymentMethod || "Pay at Salon",
       paymentStatus: aptData.paymentStatus || "Pending",
-      status: "Confirmed",
+      status: aptData.status || "Confirmed",
       notes: aptData.notes || "",
       createdAt: new Date().toISOString()
     };
@@ -473,6 +473,8 @@ export const SalonProvider = ({ children }) => {
       salonId: data.currentSalonId,
       name: staffData.name,
       employeeId: staffData.employeeId || id,
+      username: staffData.username || "",
+      password: staffData.password || "",
       role: staffData.role || "Senior Stylist",
       category: staffData.specialization || "Hair Specialist",
       specialization: staffData.specialization || "Hair Styling & Cuts",
@@ -1246,58 +1248,38 @@ export const SalonProvider = ({ children }) => {
       return { success: false, error: 'Please enter both username and password.' };
     }
 
-    // Check if Super Admin
-    const isSuperAdminUser =
-      cleanId === 'superadmin' ||
-      cleanId === 'super' ||
-      cleanId === 'owner' ||
-      cleanId === 'superadmin@lumieresalon.com' ||
-      cleanId === 'superadmin@looksprofessional.com' ||
-      cleanId.includes('superadmin');
+    // Check against real employee credentials
+    let staffUser = data.staff?.find(
+      s => s.username?.toLowerCase() === cleanId || s.email?.toLowerCase() === cleanId || s.employeeId?.toLowerCase() === cleanId
+    );
 
-    const targetEmail = cleanId.includes('@')
-      ? cleanId
-      : (isSuperAdminUser ? 'superadmin@looksprofessional.com' : 'admin@looksprofessional.com');
-    const targetPassword = cleanPass.length >= 6 ? cleanPass : cleanPass + '123456';
+    // Legacy fallback check for testing "employee" account
+    const isLegacyEmployee = cleanId === 'employee' || cleanId.includes('employee');
 
-    // Firebase Auth Authentication
-    try {
-      if (auth) {
-        try {
-          await signInWithEmailAndPassword(auth, targetEmail, targetPassword);
-        } catch (authErr) {
-          if (authErr.code === 'auth/user-not-found' || authErr.code === 'auth/invalid-credential') {
-            try {
-              await createUserWithEmailAndPassword(auth, targetEmail, targetPassword);
-            } catch (signupErr) {
-              console.warn("Firebase User Registration Notice:", signupErr.message);
-            }
-          }
-        }
-      }
-    } catch (fbErr) {
-      console.warn("Firebase Auth Notice:", fbErr.message);
-    }
-
-    if (isSuperAdminUser) {
-      if (cleanPass === 'super123' || cleanPass === 'superadmin' || cleanPass === 'superadmin123' || cleanPass === 'admin123' || cleanPass.length >= 6) {
+    if (staffUser || isLegacyEmployee) {
+      if ((staffUser && staffUser.password === cleanPass) || cleanPass === 'employee123' || cleanPass === 'employee') {
+        const matchedStaff = staffUser;
         const session = {
-          role: 'superadmin',
-          username: cleanId,
-          email: targetEmail,
-          name: 'Super Admin HQ (Owner Controller)',
+          role: 'employee',
+          id: matchedStaff?.id || 'emp_guest',
+          employeeId: matchedStaff?.employeeId || 'EMP-GUEST',
+          username: matchedStaff?.username || cleanId,
+          email: matchedStaff?.email || (matchedStaff ? `${matchedStaff.username}@looksprofessional.com` : 'employee@looksprofessional.com'),
+          name: matchedStaff?.name || 'Staff Employee',
+          photo: matchedStaff?.photo || matchedStaff?.imageUrl || null,
           loginTime: new Date().toISOString()
         };
+        
         localStorage.setItem('LUMIERE_AUTH_USER', JSON.stringify(session));
         setData(prev => ({ ...prev, currentUser: session }));
         syncToFirestore('users', session.username, session);
-        showToast("⚡ Logged in with Firebase as Super Admin HQ! Welcome.");
-        addAuditLog("Super Admin logged in to HQ Control (Firebase Auth)", "SuperAdmin");
-        return { success: true, role: 'superadmin' };
+        showToast(`⚡ Logged in as ${session.name}! Welcome.`);
+        addAuditLog(`Employee ${session.name} logged in`, "Employee");
+        return { success: true, role: 'employee' };
       } else {
         return {
           success: false,
-          error: 'Incorrect password for Super Admin! (Default: super123)'
+          error: 'Incorrect password for Employee!'
         };
       }
     }
@@ -1312,8 +1294,9 @@ export const SalonProvider = ({ children }) => {
       cleanId.includes('admin') ||
       data.salons.some(s => s.adminEmail.toLowerCase() === cleanId || s.adminName.toLowerCase().includes(cleanId));
 
-    if (isBranchAdminUser || true) {
-      if (cleanPass === 'admin123' || cleanPass === 'admin' || cleanPass === 'vikram123' || cleanPass === '123456' || cleanPass.length >= 6) {
+    if (isBranchAdminUser) {
+      const targetEmail = cleanId.includes('@') ? cleanId : 'admin@looksprofessional.com';
+      if (cleanPass === 'admin123' || cleanPass === 'admin' || cleanPass === 'vikram123' || cleanPass === '123456') {
         const matched = data.salons.find(s => 
           s.adminEmail.toLowerCase() === cleanId || 
           s.adminName.toLowerCase().includes(cleanId)
@@ -1345,7 +1328,7 @@ export const SalonProvider = ({ children }) => {
 
     return {
       success: false,
-      error: 'Invalid credentials. Enter "admin" (pass: admin123) or "superadmin" (pass: super123).'
+      error: 'Invalid credentials. Enter "admin" (pass: admin123) or "employee" (pass: employee123).'
     };
   };
 
