@@ -28,7 +28,7 @@ export default function AdminLogin({ onLoginSuccess, onReturnHome }) {
 
   const [loading, setLoading] = useState(false);
 
-  // Switch between Admin & Super Admin tab
+  // Switch between Admin & Employee tab
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     setErrorMsg('');
@@ -36,8 +36,8 @@ export default function AdminLogin({ onLoginSuccess, onReturnHome }) {
       setUsername('admin');
       setPassword('admin123');
     } else {
-      setUsername('');
-      setPassword('');
+      setUsername('employee');
+      setPassword('employee123');
     }
   };
 

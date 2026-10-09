@@ -121,7 +121,6 @@ export const SalonProvider = ({ children }) => {
     // them from overwriting local changes if Firebase is not fully configured.
     // Uncomment these if you have configured your own Firebase project and rules.
 
-    /*
     const mergeWithLocal = (localList = [], firestoreList = []) => {
       const merged = [...localList];
       firestoreList.forEach(item => {
@@ -185,7 +184,6 @@ export const SalonProvider = ({ children }) => {
       unsubLeads();
       unsubInvoices();
     };
-    */
   }, []);
 
   const showToast = (message) => {
