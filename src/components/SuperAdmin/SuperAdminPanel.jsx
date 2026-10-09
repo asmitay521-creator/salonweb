@@ -35,7 +35,13 @@ export default function SuperAdminPanel({ onReturnHome }) {
   };
 
   const employeeName = data.currentUser?.name || 'Staff Employee';
-  const myAppointments = data.appointments.filter(a => a.stylistId === data.currentUser?.username || a.stylistName?.includes(employeeName));
+  const myAppointments = data.appointments.filter(a => 
+    a.stylistId === data.currentUser?.username || 
+    a.staffId === data.currentUser?.username ||
+    a.staffId === data.currentUser?.id ||
+    a.stylistName?.includes(employeeName) ||
+    a.staffName?.includes(employeeName)
+  );
   const todayApts = myAppointments.filter(a => a.date === new Date().toISOString().split('T')[0]);
 
   return (
