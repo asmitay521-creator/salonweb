@@ -68,6 +68,26 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
   const [leadViewMode, setLeadViewMode] = useState('table'); // 'table' | 'kanban'
   const [isLeadFilterOpen, setIsLeadFilterOpen] = useState(false);
   const [leadSubStatusFilter, setLeadSubStatusFilter] = useState('all');
+  const [selectedLeadForView, setSelectedLeadForView] = useState(null);
+  const [selectedLeadForEdit, setSelectedLeadForEdit] = useState(null);
+  const [editLeadForm, setEditLeadForm] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    gender: 'Female',
+    city: '',
+    source: 'Instagram Ad',
+    interestedService: '',
+    estimatedValue: 2500,
+    stage: 'lead_generated',
+    status: 'New',
+    assignedTo: 'Unassigned',
+    assignedToId: '',
+    preferredDate: '',
+    preferredTime: '11:00 AM',
+    nextFollowUp: '',
+    notes: ''
+  });
   const [selectedLeadForAssign, setSelectedLeadForAssign] = useState(null);
   const [selectedLeadForFollowUp, setSelectedLeadForFollowUp] = useState(null);
   const [selectedLeadForBookApt, setSelectedLeadForBookApt] = useState(null);
@@ -1957,7 +1977,6 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                               <Percent size={13} strokeWidth={2.5} /> Incentive Rule
                             </span>
                           </th>
-
                           <th style={{ textAlign: 'center' }}>
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#E11D48', fontWeight: 800 }}>
                               <Sparkles size={13} strokeWidth={2.5} /> Actions
@@ -1973,14 +1992,11 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                           if (filtered.length === 0) {
                             return (
                               <tr>
-                                <td colSpan={9} className="empty-table-cell">
+                                <td colSpan={8} className="empty-table-cell">
                                   <div className="looks-empty-state">
                                     <Scissors size={32} />
                                     <h4>No services found</h4>
                                     <p>No salon services match your search or category filter.</p>
-                                    <button className="btn-gold-action" onClick={() => setShowAddServiceModal(true)}>
-                                      <Plus size={15} /> Add Service
-                                    </button>
                                   </div>
                                 </td>
                               </tr>
@@ -2012,7 +2028,6 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                                   })()}
                                 </span>
                               </td>
-
                               <td>
                                 <div className="action-buttons-cell">
                                   <button className="btn-table-action" onClick={() => showToast(`Edit service: ${srv.name}`)} title="Edit">
@@ -3552,7 +3567,6 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                       <table className="looks-master-table">
                         <thead>
                           <tr>
-
                             <th>
                               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#7C3AED', fontWeight: 800 }}>
                                 <User size={13} strokeWidth={2.5} /> Name
@@ -3571,11 +3585,6 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                             <th>
                               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#0284C7', fontWeight: 800 }}>
                                 <Layers size={13} strokeWidth={2.5} /> Services
-                              </span>
-                            </th>
-                            <th>
-                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#D97706', fontWeight: 800 }}>
-                                <Percent size={13} strokeWidth={2.5} /> Incentive Rules
                               </span>
                             </th>
                             <th>
@@ -3615,7 +3624,7 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                             if (filtered.length === 0) {
                               return (
                                 <tr>
-                                  <td colSpan={7} className="empty-table-cell">
+                                  <td colSpan={6} className="empty-table-cell">
                                     <div className="looks-empty-state">
                                       <Users size={32} />
                                       <h4>No employees found</h4>
@@ -3627,22 +3636,10 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                             }
                             return filtered.map(emp => (
                               <tr key={emp.id}>
-
                                 <td><strong>{emp.name}</strong></td>
                                 <td>{emp.role}</td>
                                 <td>{emp.specialization || 'Hair, Colour, Spa'}</td>
                                 <td><span className="products-count-tag">{emp.servicesCount || 12} Services</span></td>
-                                <td>
-                                  <button
-                                    className="btn-view-rules"
-                                    onClick={() => {
-                                      setSelectedStylistForRule(emp.name);
-                                      setEmployeeSubTab('incentive');
-                                    }}
-                                  >
-                                    View Rules
-                                  </button>
-                                </td>
                                 <td>
                                   <select
                                     className="looks-filter-select"
@@ -3695,6 +3692,31 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                   {employeeSubTab === 'services' && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                       <div className="looks-table-card">
+                        <div style={{ padding: '14px 18px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <button
+                            type="button"
+                            className="btn-icon-back"
+                            onClick={() => setEmployeeSubTab('list')}
+                            title="Back to All Employees"
+                            style={{
+                              width: '34px',
+                              height: '34px',
+                              borderRadius: '8px',
+                              background: '#FFFFFF',
+                              border: '1px solid #CBD5E1',
+                              color: '#0F172A',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'pointer',
+                              boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                              flexShrink: 0
+                            }}
+                          >
+                            <ArrowLeft size={18} strokeWidth={2.4} />
+                          </button>
+                          <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#0F172A' }}>Employee Services Assignment Matrix</h4>
+                        </div>
                       <table className="looks-master-table">
                         <thead>
                           <tr>
@@ -3844,8 +3866,31 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                       {/* Top: Incentive Rules Card */}
                       <div className="looks-incentive-rules-card">
                         <div className="rules-header-strip">
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
-                            <h4 className="rules-title">Incentive Rules - {currentIncentiveStylist}</h4>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                            <button
+                              type="button"
+                              className="btn-icon-back"
+                              onClick={() => setEmployeeSubTab('list')}
+                              title="Back to All Employees"
+                              style={{
+                                width: '36px',
+                                height: '36px',
+                                borderRadius: '8px',
+                                background: '#FFFFFF',
+                                border: '1px solid #CBD5E1',
+                                color: '#0F172A',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                                transition: 'all 0.15s ease',
+                                flexShrink: 0
+                              }}
+                            >
+                              <ArrowLeft size={18} strokeWidth={2.4} />
+                            </button>
+                            <h4 className="rules-title" style={{ margin: 0 }}>Incentive Rules - {currentIncentiveStylist}</h4>
                             <select
                               className="looks-filter-select"
                               value={selectedStylistForRule}
@@ -4007,6 +4052,31 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                   {/* 4. Performance Subtab */}
                   {employeeSubTab === 'performance' && (
                     <div className="looks-table-card">
+                      <div style={{ padding: '14px 18px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <button
+                          type="button"
+                          className="btn-icon-back"
+                          onClick={() => setEmployeeSubTab('list')}
+                          title="Back to All Employees"
+                          style={{
+                            width: '34px',
+                            height: '34px',
+                            borderRadius: '8px',
+                            background: '#FFFFFF',
+                            border: '1px solid #CBD5E1',
+                            color: '#0F172A',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                            flexShrink: 0
+                          }}
+                        >
+                          <ArrowLeft size={18} strokeWidth={2.4} />
+                        </button>
+                        <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#0F172A' }}>Employee Performance Leaderboard</h4>
+                      </div>
                       <table className="looks-master-table">
                         <thead>
                           <tr>
@@ -4767,10 +4837,11 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                                   });
 
                                 if (filtered.length === 0) {
+                                  const hasNoLeads = (data.leads || []).length === 0;
                                   return (
                                     <tr>
                                       <td colSpan={7} style={{ padding: '60px 20px', textAlign: 'center' }}>
-                                        <div style={{ maxWidth: '400px', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                                        <div style={{ maxWidth: '420px', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
                                           <div style={{
                                             width: '64px',
                                             height: '64px',
@@ -4779,16 +4850,40 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            marginBottom: '6px'
+                                            marginBottom: '4px'
                                           }}>
                                             <Target size={36} strokeWidth={1.5} color="#94A3B8" />
                                           </div>
                                           <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 700, color: '#1E293B' }}>
-                                            No leads matching filter
+                                            {hasNoLeads ? 'No Leads Yet' : 'No leads matching filter'}
                                           </h3>
                                           <p style={{ margin: 0, fontSize: '13px', color: '#64748B' }}>
-                                            Try clearing your status, staff or date filters.
+                                            {hasNoLeads
+                                              ? 'All sample leads were removed. Click below to add a new lead.'
+                                              : 'Try clearing your status, staff or date filters.'}
                                           </p>
+                                          {hasNoLeads && (
+                                            <button
+                                              type="button"
+                                              onClick={() => setShowAddLeadModal(true)}
+                                              style={{
+                                                marginTop: '6px',
+                                                padding: '9px 18px',
+                                                borderRadius: '8px',
+                                                background: '#0D9488',
+                                                color: '#FFFFFF',
+                                                border: 'none',
+                                                fontWeight: 700,
+                                                fontSize: '13px',
+                                                cursor: 'pointer',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '6px'
+                                              }}
+                                            >
+                                              <Plus size={16} /> Add New Lead
+                                            </button>
+                                          )}
                                         </div>
                                       </td>
                                     </tr>
@@ -4985,181 +5080,102 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                                         </span>
                                       </td>
 
-                                      {/* 7. Pipeline Actions */}
+                                      {/* 7. Action Column: View, Edit, Delete */}
                                       <td style={{ padding: '12px 14px', textAlign: 'center' }}>
-                                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                                          {/* Direct Reach Shortcuts */}
-                                          <a
-                                            href={`https://wa.me/91${cleanPhone}?text=${encodeURIComponent(`Hi ${lead.name}, Greetings from Looks Professional Salon! Regarding your inquiry for ${lead.interestedService || 'salon services'}, how may we assist you with scheduling your appointment?`)}`}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className="btn-action-icon whatsapp"
-                                            title="Chat on WhatsApp"
-                                            style={{ width: '28px', height: '28px' }}
+                                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
+                                          {/* 1. View Option */}
+                                          <button
+                                            type="button"
+                                            onClick={() => setSelectedLeadForView(lead)}
+                                            title="View Lead Details"
+                                            style={{
+                                              display: 'inline-flex',
+                                              alignItems: 'center',
+                                              gap: '4px',
+                                              padding: '5px 10px',
+                                              borderRadius: '6px',
+                                              fontSize: '11.5px',
+                                              fontWeight: 700,
+                                              background: 'rgba(2, 132, 199, 0.08)',
+                                              color: '#0284C7',
+                                              border: '1px solid rgba(2, 132, 199, 0.25)',
+                                              cursor: 'pointer',
+                                              transition: 'all 0.15s ease'
+                                            }}
                                           >
-                                            <MessageSquare size={13} />
-                                          </a>
-                                          <a
-                                            href={`tel:${lead.phone}`}
-                                            className="btn-action-icon call"
-                                            title="Call Customer"
-                                            style={{ width: '28px', height: '28px' }}
-                                          >
-                                            <Phone size={13} />
-                                          </a>
+                                            <Eye size={12} strokeWidth={2.4} />
+                                            <span>View</span>
+                                          </button>
 
-                                          {/* Workflow Progression Button */}
-                                          {isNew && (
-                                            <button
-                                              type="button"
-                                              onClick={() => setSelectedLeadForAssign(lead)}
-                                              style={{ background: '#7C3AED', color: '#FFFFFF', border: 'none', padding: '5px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}
-                                              title="Step 2: Assign Stylist"
-                                            >
-                                              Assign ➔
-                                            </button>
-                                          )}
-
-                                          {isContacted && (
-                                            <button
-                                              type="button"
-                                              onClick={() => {
-                                                setSelectedLeadForFollowUp(lead);
-                                                setFollowUpEntryForm({
-                                                  actionType: 'completed',
-                                                  type: 'Phone Call',
-                                                  notes: '',
-                                                  nextFollowUpDate: new Date().toISOString().split('T')[0],
-                                                  nextFollowUpTime: '02:00 PM',
-                                                  lostReason: 'Pricing too high / Out of budget'
-                                                });
-                                              }}
-                                              style={{ background: '#0284C7', color: '#FFFFFF', border: 'none', padding: '5px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}
-                                              title="Step 3: Follow-up Customer"
-                                            >
-                                              Follow-up ➔
-                                            </button>
-                                          )}
-
-                                          {isFollowUp && (
-                                            <button
-                                              type="button"
-                                              onClick={() => {
-                                                setSelectedLeadForFollowUp(lead);
-                                                setFollowUpEntryForm({
-                                                  actionType: 'completed',
-                                                  type: 'Phone Call',
-                                                  notes: '',
-                                                  nextFollowUpDate: new Date().toISOString().split('T')[0],
-                                                  nextFollowUpTime: '02:00 PM',
-                                                  lostReason: 'Pricing too high / Out of budget'
-                                                });
-                                              }}
-                                              style={{ background: '#EAB308', color: '#FFFFFF', border: 'none', padding: '5px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 800, cursor: 'pointer' }}
-                                              title="Resolve Follow-up Outcome"
-                                            >
-                                              Outcome ➔
-                                            </button>
-                                          )}
-
-                                          {isInterested && (
-                                            <button
-                                              type="button"
-                                              onClick={() => {
-                                                setSelectedLeadForBookApt(lead);
-                                                const foundService = (data.services || []).find(s => s.name === lead.interestedService);
-                                                setBookLeadAptForm({
-                                                  serviceId: foundService ? foundService.id : 'srv_01',
-                                                  serviceName: lead.interestedService || 'Signature Precision Haircut & Styling',
-                                                  date: lead.preferredDate || new Date().toISOString().split('T')[0],
-                                                  time: lead.preferredTime || '11:00 AM',
-                                                  staffId: lead.assignedToId || 'stf_01',
-                                                  staffName: lead.assignedTo || 'Maya Sharma',
-                                                  duration: foundService ? foundService.duration : 45,
-                                                  amount: foundService ? foundService.price : (lead.estimatedValue || 2500),
-                                                  notes: `Booked via CRM Lead Funnel.`
-                                                });
-                                              }}
-                                              className="btn-gold-action"
-                                              style={{ padding: '5px 10px', fontSize: '11px' }}
-                                              title="Book Salon Appointment"
-                                            >
-                                              <CalendarPlus size={12} /> Book Apt
-                                            </button>
-                                          )}
-
-                                          {isBooked && (
-                                            <button
-                                              type="button"
-                                              onClick={() => markLeadServiceDone(lead.id)}
-                                              style={{ background: '#06B6D4', color: '#FFFFFF', border: 'none', padding: '5px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}
-                                              title="Customer Visited & Service Done"
-                                            >
-                                              <CheckCircle2 size={12} /> Service Done
-                                            </button>
-                                          )}
-
-                                          {isServiceDone && (
-                                            <button
-                                              type="button"
-                                              onClick={() => {
-                                                const cust = convertLeadToCustomer(lead.id);
-                                                if (cust) setSelectedCustomerForProfile(cust);
-                                              }}
-                                              style={{ background: '#0D9488', color: '#FFFFFF', border: 'none', padding: '5px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 800, cursor: 'pointer' }}
-                                              title="Convert into Permanent VIP Customer Profile"
-                                            >
-                                              <Award size={12} /> Convert VIP
-                                            </button>
-                                          )}
-
-                                          {isConverted && (
-                                            <button
-                                              type="button"
-                                              onClick={() => {
-                                                const foundCust = (data.customers || []).find(c => c.phone === lead.phone || c.id === lead.convertedCustomerId);
-                                                setSelectedCustomerForProfile(foundCust || {
-                                                  id: lead.convertedCustomerId || lead.id,
-                                                  name: lead.name,
-                                                  phone: lead.phone,
-                                                  email: lead.email,
-                                                  gender: lead.gender || 'Female',
-                                                  tier: 'Diamond VIP',
-                                                  loyaltyPoints: 350,
-                                                  totalSpend: lead.estimatedValue || 3500,
-                                                  preferences: { preferredStylist: lead.assignedTo || 'Maya Sharma', preferredService: lead.interestedService }
-                                                });
-                                              }}
-                                              style={{ background: 'rgba(13, 148, 136, 0.1)', border: '1px solid #0D9488', color: '#0D9488', padding: '4px 8px', borderRadius: '6px', fontSize: '10.5px', fontWeight: 700, cursor: 'pointer' }}
-                                              title="View VIP Customer Profile"
-                                            >
-                                              <User size={12} /> Profile
-                                            </button>
-                                          )}
-
-                                          {isLost && (
-                                            <button
-                                              type="button"
-                                              onClick={() => updateLeadStatus(lead.id, 'New', 'lead_generated')}
-                                              style={{ background: '#F1F5F9', border: '1px solid #CBD5E1', color: '#475569', padding: '4px 8px', borderRadius: '5px', fontSize: '10px', fontWeight: 600, cursor: 'pointer' }}
-                                              title="Re-open Lead"
-                                            >
-                                              Re-open
-                                            </button>
-                                          )}
-
-                                          {/* Delete action */}
+                                          {/* 2. Edit Option */}
                                           <button
                                             type="button"
                                             onClick={() => {
-                                              if (window.confirm(`Delete lead "${lead.name}"?`)) {
+                                              setSelectedLeadForEdit(lead);
+                                              setEditLeadForm({
+                                                name: lead.name || '',
+                                                phone: (lead.phone || '').replace(/\+91\s?/, ''),
+                                                email: lead.email || '',
+                                                gender: lead.gender || 'Female',
+                                                city: lead.city || '',
+                                                source: lead.source || 'Instagram Ad',
+                                                interestedService: lead.interestedService || ((data.services && data.services[0]?.name) || 'Signature Precision Haircut & Styling'),
+                                                estimatedValue: lead.estimatedValue || 2500,
+                                                stage: lead.stage || 'lead_generated',
+                                                status: lead.status || 'New',
+                                                assignedTo: lead.assignedTo || 'Unassigned',
+                                                preferredDate: lead.preferredDate || (lead.nextFollowUp ? lead.nextFollowUp.slice(0, 10) : new Date().toISOString().split('T')[0]),
+                                                preferredTime: lead.preferredTime || '11:00 AM',
+                                                nextFollowUp: lead.nextFollowUp || '',
+                                                notes: lead.notes || ''
+                                              });
+                                            }}
+                                            title="Edit Lead Information"
+                                            style={{
+                                              display: 'inline-flex',
+                                              alignItems: 'center',
+                                              gap: '4px',
+                                              padding: '5px 10px',
+                                              borderRadius: '6px',
+                                              fontSize: '11.5px',
+                                              fontWeight: 700,
+                                              background: 'rgba(124, 58, 237, 0.08)',
+                                              color: '#7C3AED',
+                                              border: '1px solid rgba(124, 58, 237, 0.25)',
+                                              cursor: 'pointer',
+                                              transition: 'all 0.15s ease'
+                                            }}
+                                          >
+                                            <Edit2 size={12} strokeWidth={2.4} />
+                                            <span>Edit</span>
+                                          </button>
+
+                                          {/* 3. Delete Option */}
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              if (window.confirm(`Are you sure you want to delete lead "${lead.name}"?`)) {
                                                 deleteLead(lead.id);
                                               }
                                             }}
-                                            style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: '4px' }}
                                             title="Delete Lead"
+                                            style={{
+                                              display: 'inline-flex',
+                                              alignItems: 'center',
+                                              gap: '4px',
+                                              padding: '5px 10px',
+                                              borderRadius: '6px',
+                                              fontSize: '11.5px',
+                                              fontWeight: 700,
+                                              background: 'rgba(239, 68, 68, 0.08)',
+                                              color: '#DC2626',
+                                              border: '1px solid rgba(239, 68, 68, 0.25)',
+                                              cursor: 'pointer',
+                                              transition: 'all 0.15s ease'
+                                            }}
                                           >
-                                            <Trash2 size={13} />
+                                            <Trash2 size={12} strokeWidth={2.4} />
+                                            <span>Delete</span>
                                           </button>
                                         </div>
                                       </td>
@@ -5231,9 +5247,91 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                                               }}>
                                                 {lead.source || 'Website'}
                                               </span>
-                                              <span style={{ fontSize: '10px', color: '#94A3B8', fontFamily: 'monospace' }}>
-                                                #{lead.id}
-                                              </span>
+                                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => setSelectedLeadForView(lead)}
+                                                  title="View Lead Details"
+                                                  style={{
+                                                    background: 'rgba(2, 132, 199, 0.08)',
+                                                    border: '1px solid rgba(2, 132, 199, 0.2)',
+                                                    borderRadius: '4px',
+                                                    cursor: 'pointer',
+                                                    color: '#0284C7',
+                                                    padding: '2px 5px',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '2px',
+                                                    fontSize: '9.5px',
+                                                    fontWeight: 700
+                                                  }}
+                                                >
+                                                  <Eye size={10} /> View
+                                                </button>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => {
+                                                    setSelectedLeadForEdit(lead);
+                                                    setEditLeadForm({
+                                                      name: lead.name || '',
+                                                      phone: (lead.phone || '').replace(/\+91\s?/, ''),
+                                                      email: lead.email || '',
+                                                      gender: lead.gender || 'Female',
+                                                      city: lead.city || '',
+                                                      source: lead.source || 'Instagram Ad',
+                                                      interestedService: lead.interestedService || ((data.services && data.services[0]?.name) || 'Signature Precision Haircut & Styling'),
+                                                      estimatedValue: lead.estimatedValue || 2500,
+                                                      stage: lead.stage || 'lead_generated',
+                                                      status: lead.status || 'New',
+                                                      assignedTo: lead.assignedTo || 'Unassigned',
+                                                      preferredDate: lead.preferredDate || (lead.nextFollowUp ? lead.nextFollowUp.slice(0, 10) : new Date().toISOString().split('T')[0]),
+                                                      preferredTime: lead.preferredTime || '11:00 AM',
+                                                      nextFollowUp: lead.nextFollowUp || '',
+                                                      notes: lead.notes || ''
+                                                    });
+                                                  }}
+                                                  title="Edit Lead Information"
+                                                  style={{
+                                                    background: 'rgba(124, 58, 237, 0.08)',
+                                                    border: '1px solid rgba(124, 58, 237, 0.2)',
+                                                    borderRadius: '4px',
+                                                    cursor: 'pointer',
+                                                    color: '#7C3AED',
+                                                    padding: '2px 5px',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '2px',
+                                                    fontSize: '9.5px',
+                                                    fontWeight: 700
+                                                  }}
+                                                >
+                                                  <Edit2 size={10} /> Edit
+                                                </button>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => {
+                                                    if (window.confirm(`Are you sure you want to delete lead "${lead.name}"?`)) {
+                                                      deleteLead(lead.id);
+                                                    }
+                                                  }}
+                                                  title="Delete Lead"
+                                                  style={{
+                                                    background: 'rgba(239, 68, 68, 0.08)',
+                                                    border: '1px solid rgba(239, 68, 68, 0.2)',
+                                                    borderRadius: '4px',
+                                                    cursor: 'pointer',
+                                                    color: '#DC2626',
+                                                    padding: '2px 5px',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '2px',
+                                                    fontSize: '9.5px',
+                                                    fontWeight: 700
+                                                  }}
+                                                >
+                                                  <Trash2 size={10} />
+                                                </button>
+                                              </div>
                                             </div>
 
                                             <div>
@@ -7922,6 +8020,443 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
       )}
 
       {/* ========================================================================= */}
+      {/* MODAL: VIEW LEAD DETAILS */}
+      {/* ========================================================================= */}
+      {selectedLeadForView && (
+        <div className="looks-modal-backdrop" onClick={() => setSelectedLeadForView(null)}>
+          <div className="looks-modal-window" style={{ maxWidth: '620px', width: '92%', borderRadius: '16px', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-top" style={{ padding: '18px 24px 14px 24px', background: '#FFFFFF', borderBottom: '1px solid #E5E7EB', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(2, 132, 199, 0.12)', color: '#0284C7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Eye size={22} strokeWidth={2.3} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#0F172A' }}>Lead Profile &amp; Details</h3>
+                  <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#64748B' }}>
+                    ID: #{selectedLeadForView.id} • Created: {new Date(selectedLeadForView.createdAt || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </p>
+                </div>
+              </div>
+              <button className="btn-close-x" onClick={() => setSelectedLeadForView(null)} style={{ fontSize: '22px', background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}>×</button>
+            </div>
+
+            <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '80vh', overflowY: 'auto' }}>
+              {/* Profile Header Card */}
+              <div style={{ background: '#F8FAFC', padding: '16px', borderRadius: '12px', border: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#0F172A', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 800 }}>
+                    {(selectedLeadForView.name || 'L').charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#0F172A' }}>{selectedLeadForView.name}</h4>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '4px' }}>
+                      <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '6px', background: 'rgba(2, 132, 199, 0.12)', color: '#0284C7', fontWeight: 700 }}>
+                        {selectedLeadForView.status || 'New'}
+                      </span>
+                      <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '6px', background: 'rgba(124, 58, 237, 0.12)', color: '#7C3AED', fontWeight: 700 }}>
+                        {selectedLeadForView.source || 'Website'}
+                      </span>
+                      {selectedLeadForView.gender && (
+                        <span style={{ fontSize: '11px', color: '#64748B' }}>
+                          • {selectedLeadForView.gender}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Direct Reach Buttons */}
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <a
+                    href={`https://wa.me/91${(selectedLeadForView.phone || '').replace(/[^0-9]/g, '').slice(-10)}?text=${encodeURIComponent(`Hi ${selectedLeadForView.name}, Greetings from Looks Professional Salon! Regarding your inquiry for ${selectedLeadForView.interestedService || 'salon services'}, how may we assist you today?`)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn-action-icon whatsapp"
+                    title="Chat on WhatsApp"
+                    style={{ width: '34px', height: '34px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#25D366', color: '#FFFFFF' }}
+                  >
+                    <MessageSquare size={16} />
+                  </a>
+                  <a
+                    href={`tel:${selectedLeadForView.phone}`}
+                    className="btn-action-icon call"
+                    title="Call Client"
+                    style={{ width: '34px', height: '34px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0284C7', color: '#FFFFFF' }}
+                  >
+                    <Phone size={16} />
+                  </a>
+                  {selectedLeadForView.email && (
+                    <a
+                      href={`mailto:${selectedLeadForView.email}`}
+                      title="Send Email"
+                      style={{ width: '34px', height: '34px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#7C3AED', color: '#FFFFFF' }}
+                    >
+                      <Mail size={16} />
+                    </a>
+                  )}
+                </div>
+              </div>
+
+              {/* Grid 2-Column Info Box */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px' }}>
+                <div style={{ background: '#FFFFFF', padding: '12px 14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                  <span style={{ fontSize: '11px', color: '#64748B', display: 'block', fontWeight: 600 }}>Phone Number</span>
+                  <strong style={{ fontSize: '13px', color: '#0F172A' }}>{selectedLeadForView.phone || 'N/A'}</strong>
+                </div>
+                <div style={{ background: '#FFFFFF', padding: '12px 14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                  <span style={{ fontSize: '11px', color: '#64748B', display: 'block', fontWeight: 600 }}>Email Address</span>
+                  <strong style={{ fontSize: '13px', color: '#0F172A' }}>{selectedLeadForView.email || 'None'}</strong>
+                </div>
+                <div style={{ background: '#FFFFFF', padding: '12px 14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                  <span style={{ fontSize: '11px', color: '#64748B', display: 'block', fontWeight: 600 }}>Interested Service</span>
+                  <strong style={{ fontSize: '13px', color: '#0F172A' }}>{selectedLeadForView.interestedService || 'General Inquiry'}</strong>
+                </div>
+                <div style={{ background: '#FFFFFF', padding: '12px 14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                  <span style={{ fontSize: '11px', color: '#64748B', display: 'block', fontWeight: 600 }}>Estimated Value</span>
+                  <strong style={{ fontSize: '13px', color: '#0D9488' }}>₹{Number(selectedLeadForView.estimatedValue || 0).toLocaleString('en-IN')}</strong>
+                </div>
+                <div style={{ background: '#FFFFFF', padding: '12px 14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                  <span style={{ fontSize: '11px', color: '#64748B', display: 'block', fontWeight: 600 }}>Assigned Staff</span>
+                  <strong style={{ fontSize: '13px', color: '#7C3AED' }}>👤 {selectedLeadForView.assignedTo || 'Unassigned'}</strong>
+                </div>
+                <div style={{ background: '#FFFFFF', padding: '12px 14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                  <span style={{ fontSize: '11px', color: '#64748B', display: 'block', fontWeight: 600 }}>Next Follow-up</span>
+                  <strong style={{ fontSize: '13px', color: '#D97706' }}>⏰ {selectedLeadForView.nextFollowUp || 'Not scheduled'}</strong>
+                </div>
+              </div>
+
+              {/* Notes Box */}
+              {selectedLeadForView.notes && (
+                <div style={{ background: '#F8FAFC', padding: '14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                  <span style={{ fontSize: '11.5px', color: '#64748B', fontWeight: 700, display: 'block', marginBottom: '4px' }}>Client Notes &amp; Inquiries</span>
+                  <p style={{ margin: 0, fontSize: '12.5px', color: '#334155', lineHeight: '1.5' }}>{selectedLeadForView.notes}</p>
+                </div>
+              )}
+
+              {/* Follow-up Timeline */}
+              <div>
+                <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#0F172A', display: 'block', marginBottom: '8px' }}>Follow-up &amp; Activity History</span>
+                {(selectedLeadForView.followUpHistory || []).length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {selectedLeadForView.followUpHistory.map((h, i) => (
+                      <div key={h.id || i} style={{ background: '#FFFFFF', padding: '10px 14px', borderRadius: '8px', border: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
+                        <div>
+                          <div style={{ fontSize: '12px', fontWeight: 700, color: '#0F172A' }}>{h.type} • by {h.staffName || 'Staff'}</div>
+                          <p style={{ margin: '3px 0 0', fontSize: '11.5px', color: '#64748B' }}>{h.notes}</p>
+                        </div>
+                        <span style={{ fontSize: '10.5px', color: '#94A3B8', whiteSpace: 'nowrap' }}>{h.date}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ padding: '16px', textAlign: 'center', background: '#F8FAFC', borderRadius: '8px', border: '1px dashed #CBD5E1', color: '#94A3B8', fontSize: '12px' }}>
+                    No prior follow-up logs recorded yet.
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Footer Controls */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px', borderTop: '1px solid #E2E8F0' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (window.confirm(`Delete lead "${selectedLeadForView.name}"?`)) {
+                      deleteLead(selectedLeadForView.id);
+                      setSelectedLeadForView(null);
+                    }
+                  }}
+                  style={{ background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.25)', color: '#DC2626', padding: '8px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                >
+                  <Trash2 size={14} /> Delete Lead
+                </button>
+
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const cur = selectedLeadForView;
+                      setSelectedLeadForView(null);
+                      setSelectedLeadForEdit(cur);
+                      setEditLeadForm({
+                        name: cur.name || '',
+                        phone: (cur.phone || '').replace(/\+91\s?/, ''),
+                        email: cur.email || '',
+                        gender: cur.gender || 'Female',
+                        city: cur.city || '',
+                        source: cur.source || 'Instagram Ad',
+                        interestedService: cur.interestedService || ((data.services && data.services[0]?.name) || 'Signature Precision Haircut & Styling'),
+                        estimatedValue: cur.estimatedValue || 2500,
+                        stage: cur.stage || 'lead_generated',
+                        status: cur.status || 'New',
+                        assignedTo: cur.assignedTo || 'Unassigned',
+                        preferredDate: cur.preferredDate || (cur.nextFollowUp ? cur.nextFollowUp.slice(0, 10) : new Date().toISOString().split('T')[0]),
+                        preferredTime: cur.preferredTime || '11:00 AM',
+                        nextFollowUp: cur.nextFollowUp || '',
+                        notes: cur.notes || ''
+                      });
+                    }}
+                    style={{ background: '#7C3AED', color: '#FFFFFF', border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  >
+                    <Edit2 size={14} /> Edit Lead
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => setSelectedLeadForView(null)}
+                    style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: EDIT LEAD */}
+      {/* ========================================================================= */}
+      {selectedLeadForEdit && (
+        <div className="looks-modal-backdrop" onClick={() => setSelectedLeadForEdit(null)}>
+          <div className="looks-modal-window" style={{ maxWidth: '640px', width: '92%', borderRadius: '16px', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-top" style={{ padding: '18px 24px 14px 24px', background: '#FFFFFF', borderBottom: '1px solid #E5E7EB', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'rgba(124, 58, 237, 0.12)', color: '#7C3AED', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Edit2 size={20} strokeWidth={2.3} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#0F172A' }}>Edit Lead Details</h3>
+                  <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#64748B' }}>Update lead contact info, requirements, and assignment.</p>
+                </div>
+              </div>
+              <button className="btn-close-x" onClick={() => setSelectedLeadForEdit(null)} style={{ fontSize: '22px', background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}>×</button>
+            </div>
+
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const cleanPhone = (editLeadForm.phone || '').replace(/\D/g, '');
+              if (cleanPhone.length !== 10 && cleanPhone.length > 0 && cleanPhone.length !== 12) {
+                showToast("⚠️ Please enter a valid 10-digit mobile number.");
+                return;
+              }
+              const formattedPhone = cleanPhone.length === 10 ? `+91 ${cleanPhone}` : (editLeadForm.phone || selectedLeadForEdit.phone);
+              const foundStaff = (data.staff || []).find(s => s.name === editLeadForm.assignedTo);
+              const staffId = foundStaff ? foundStaff.id : (editLeadForm.assignedTo === 'Unassigned' ? '' : selectedLeadForEdit.assignedToId || '');
+
+              updateLead(selectedLeadForEdit.id, {
+                ...editLeadForm,
+                phone: formattedPhone,
+                assignedToId: staffId,
+                estimatedValue: parseFloat(editLeadForm.estimatedValue || 0)
+              });
+
+              showToast(`Lead "${editLeadForm.name}" updated successfully!`);
+              setSelectedLeadForEdit(null);
+            }} style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '14px', maxHeight: '80vh', overflowY: 'auto' }}>
+
+              {/* Row 1: Name & Mobile */}
+              <div className="form-group-looks-grid">
+                <div className="form-group-looks">
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A', marginBottom: '5px' }}>
+                    Customer Name <span style={{ color: '#EF4444' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    className="looks-input"
+                    value={editLeadForm.name}
+                    onChange={(e) => setEditLeadForm({ ...editLeadForm, name: e.target.value })}
+                  />
+                </div>
+                <div className="form-group-looks">
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A', marginBottom: '5px' }}>
+                    Mobile Number <span style={{ color: '#EF4444' }}>*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    className="looks-input"
+                    value={editLeadForm.phone}
+                    onChange={(e) => setEditLeadForm({ ...editLeadForm, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
+                  />
+                </div>
+              </div>
+
+              {/* Row 2: Email & Gender */}
+              <div className="form-group-looks-grid">
+                <div className="form-group-looks">
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A', marginBottom: '5px' }}>Email Address</label>
+                  <input
+                    type="email"
+                    className="looks-input"
+                    value={editLeadForm.email}
+                    onChange={(e) => setEditLeadForm({ ...editLeadForm, email: e.target.value })}
+                  />
+                </div>
+                <div className="form-group-looks">
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A', marginBottom: '5px' }}>Gender</label>
+                  <select
+                    className="looks-input"
+                    value={editLeadForm.gender}
+                    onChange={(e) => setEditLeadForm({ ...editLeadForm, gender: e.target.value })}
+                  >
+                    <option value="Female">Female</option>
+                    <option value="Male">Male</option>
+                    <option value="Unisex">Unisex / Other</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Row 3: Service & Estimated Value */}
+              <div className="form-group-looks-grid">
+                <div className="form-group-looks">
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A', marginBottom: '5px' }}>
+                    Interested Service <span style={{ color: '#EF4444' }}>*</span>
+                  </label>
+                  <select
+                    className="looks-input"
+                    value={editLeadForm.interestedService}
+                    onChange={(e) => {
+                      const sName = e.target.value;
+                      const found = (data.services || []).find(s => s.name === sName);
+                      setEditLeadForm({
+                        ...editLeadForm,
+                        interestedService: sName,
+                        estimatedValue: found ? found.price : editLeadForm.estimatedValue
+                      });
+                    }}
+                  >
+                    {(data.services || []).map(s => (
+                      <option key={s.id} value={s.name}>{s.name} (₹{s.price})</option>
+                    ))}
+                    <option value="General Consultation">General Consultation</option>
+                  </select>
+                </div>
+                <div className="form-group-looks">
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A', marginBottom: '5px' }}>Estimated Value (₹)</label>
+                  <input
+                    type="number"
+                    className="looks-input"
+                    value={editLeadForm.estimatedValue}
+                    onChange={(e) => setEditLeadForm({ ...editLeadForm, estimatedValue: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              {/* Row 4: Source & Status */}
+              <div className="form-group-looks-grid">
+                <div className="form-group-looks">
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A', marginBottom: '5px' }}>Lead Source</label>
+                  <select
+                    className="looks-input"
+                    value={editLeadForm.source}
+                    onChange={(e) => setEditLeadForm({ ...editLeadForm, source: e.target.value })}
+                  >
+                    <option value="Instagram Ad">Instagram Ad</option>
+                    <option value="Google Search">Google Search</option>
+                    <option value="Website Direct">Website Direct</option>
+                    <option value="WhatsApp">WhatsApp</option>
+                    <option value="Walk-in">Walk-in</option>
+                    <option value="Facebook">Facebook</option>
+                    <option value="Referral">Client Referral</option>
+                    <option value="Phone Call">Phone Call</option>
+                  </select>
+                </div>
+                <div className="form-group-looks">
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A', marginBottom: '5px' }}>Lead Status</label>
+                  <select
+                    className="looks-input"
+                    value={editLeadForm.status}
+                    onChange={(e) => {
+                      const st = e.target.value;
+                      let stg = 'lead_generated';
+                      if (st === 'Assigned') stg = 'assign_employee';
+                      else if (st === 'Contacted') stg = 'contact_customer';
+                      else if (st === 'Follow-up' || st === 'Follow-up Again') stg = 'follow_up';
+                      else if (st === 'Interested') stg = 'interested';
+                      else if (st === 'Appointment Booked') stg = 'booking';
+                      else if (st === 'Service Done') stg = 'service_done';
+                      else if (st === 'Converted') stg = 'converted';
+                      else if (st === 'Not Interested' || st === 'Lost') stg = 'not_interested';
+                      setEditLeadForm({ ...editLeadForm, status: st, stage: stg });
+                    }}
+                  >
+                    <option value="New">🆕 New</option>
+                    <option value="Assigned">👤 Assigned</option>
+                    <option value="Contacted">📞 Contacted</option>
+                    <option value="Follow-up">🔁 Follow-up</option>
+                    <option value="Interested">👍 Interested</option>
+                    <option value="Appointment Booked">📅 Appointment Booked</option>
+                    <option value="Service Done">✓ Service Done</option>
+                    <option value="Converted">👑 Converted VIP</option>
+                    <option value="Not Interested">❌ Not Interested / Lost</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Row 5: Assigned Staff & Next Follow-up */}
+              <div className="form-group-looks-grid">
+                <div className="form-group-looks">
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A', marginBottom: '5px' }}>Assigned Staff</label>
+                  <select
+                    className="looks-input"
+                    value={editLeadForm.assignedTo}
+                    onChange={(e) => setEditLeadForm({ ...editLeadForm, assignedTo: e.target.value })}
+                  >
+                    <option value="Unassigned">Unassigned</option>
+                    {(data.staff || []).map(st => (
+                      <option key={st.id} value={st.name}>👤 {st.name} ({st.role})</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group-looks">
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A', marginBottom: '5px' }}>Next Follow-up Date/Time</label>
+                  <input
+                    type="text"
+                    className="looks-input"
+                    placeholder="e.g. 2026-10-10 04:00 PM"
+                    value={editLeadForm.nextFollowUp}
+                    onChange={(e) => setEditLeadForm({ ...editLeadForm, nextFollowUp: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              {/* Row 6: Notes */}
+              <div className="form-group-looks">
+                <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A', marginBottom: '5px' }}>Notes &amp; Requirements</label>
+                <textarea
+                  className="looks-input"
+                  style={{ minHeight: '65px', resize: 'vertical' }}
+                  value={editLeadForm.notes}
+                  onChange={(e) => setEditLeadForm({ ...editLeadForm, notes: e.target.value })}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', paddingTop: '8px' }}>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => setSelectedLeadForEdit(null)}
+                  style={{ flex: 1, padding: '10px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-gold-action"
+                  style={{ flex: 1, padding: '10px', borderRadius: '8px', fontWeight: 700 }}
+                >
+                  💾 Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
       {/* 2. MODAL: ASSIGN TO STAFF (AS IN DIAGRAM) */}
       {/* ========================================================================= */}
       {selectedLeadForAssign && (
@@ -8770,9 +9305,37 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
 
       {/* 2. Modal: Add Service */}
       {showAddServiceModal && (
-        <div className="looks-modal-backdrop" onClick={() => setShowAddServiceModal(false)}>
-          <div className="looks-modal-window" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '540px', width: '92%', borderRadius: '16px', overflow: 'hidden' }}>
-            <div className="modal-top" style={{ padding: '18px 24px 14px 24px', background: '#FFFFFF', borderBottom: '1px solid #E5E7EB', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div
+          className="looks-modal-backdrop"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            background: 'rgba(15, 23, 42, 0.72)',
+            backdropFilter: 'blur(6px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+            overflowY: 'auto'
+          }}
+          onClick={() => setShowAddServiceModal(false)}
+        >
+          <div
+            className="looks-modal-window"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: '540px',
+              width: '92%',
+              padding: 0,
+              borderRadius: '16px',
+              overflow: 'hidden',
+              background: '#FFFFFF',
+              boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.35)',
+              border: '1px solid #E2E8F0'
+            }}
+          >
+            <div className="modal-top" style={{ padding: '16px 22px', background: '#FFFFFF', borderBottom: '1px solid #E5E7EB', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'rgba(13, 148, 136, 0.12)', color: '#0D9488', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Scissors size={22} strokeWidth={2.3} />
@@ -8782,11 +9345,33 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                   <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#64748B' }}>Add a new salon treatment, duration, pricing &amp; incentive rule.</p>
                 </div>
               </div>
-              <button className="btn-close-x" onClick={() => setShowAddServiceModal(false)} style={{ fontSize: '22px', background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}>×</button>
+              <button
+                type="button"
+                className="btn-close-x"
+                onClick={() => setShowAddServiceModal(false)}
+                style={{
+                  fontSize: '20px',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '8px',
+                  background: '#F1F5F9',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#64748B',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                ×
+              </button>
             </div>
             <form onSubmit={(e) => {
               e.preventDefault();
-              addServiceItem(newService);
+              addServiceItem({
+                ...newService,
+                status: 'Active'
+              });
               setShowAddServiceModal(false);
               setNewService({
                 name: '',
@@ -8799,7 +9384,7 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                 status: 'Active',
                 description: ''
               });
-            }} style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            }} style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div className="form-group-looks">
                 <label style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '5px', background: 'rgba(13, 148, 136, 0.12)', color: '#0D9488' }}>
@@ -8884,11 +9469,40 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                 </div>
               </div>
 
-
-
-              <button type="submit" className="btn-gold-action" style={{ width: '100%', marginTop: '6px' }}>
-                Add Service
-              </button>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => setShowAddServiceModal(false)}
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    borderRadius: '8px',
+                    border: '1px solid #D1D5DB',
+                    background: '#FFFFFF',
+                    color: '#374151',
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                    fontSize: '13px'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-gold-action"
+                  style={{
+                    flex: 1.5,
+                    padding: '10px',
+                    borderRadius: '8px',
+                    fontWeight: 700,
+                    fontSize: '13px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Add Service
+                </button>
+              </div>
             </form>
           </div>
         </div>
@@ -9842,7 +10456,25 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
 
                 {/* 4. OTHER */}
                 <div>
-
+                  <div className="form-group-looks">
+                    <label style={{ fontSize: '13px', fontWeight: 700, color: '#1E293B', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '5px', background: 'rgba(71, 85, 105, 0.12)', color: '#475569' }}>
+                        <FileText size={12} strokeWidth={2.5} />
+                      </span>
+                      <span>Notes (Optional)</span>
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <FileText size={16} color="#94A3B8" style={{ position: 'absolute', left: '12px', top: '12px' }} />
+                      <textarea
+                        className="looks-input"
+                        placeholder="Any additional notes about the employee..."
+                        rows={2}
+                        value={newStaff.notes}
+                        onChange={(e) => setNewStaff({ ...newStaff, notes: e.target.value })}
+                        style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', paddingLeft: '38px', borderRadius: '8px', resize: 'none', height: '64px', paddingTop: '10px' }}
+                      />
+                    </div>
+                  </div>
                 </div>
 
               </div>
@@ -10850,147 +11482,343 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
 
       {/* 11. Modal: Add Customer */}
       {showAddCustomerModal && (
-        <div className="looks-modal-backdrop" onClick={() => setShowAddCustomerModal(false)}>
-          <div className="looks-modal-window" style={{ maxWidth: '640px', width: '92%', borderRadius: '16px', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
-            <div className="modal-top" style={{ padding: '18px 24px 14px 24px', background: '#FFFFFF', borderBottom: '1px solid #E5E7EB', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div
+          className="looks-modal-backdrop"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            background: 'rgba(15, 23, 42, 0.72)',
+            backdropFilter: 'blur(6px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+            overflowY: 'auto'
+          }}
+          onClick={() => setShowAddCustomerModal(false)}
+        >
+          <div
+            className="looks-modal-window"
+            style={{
+              maxWidth: '620px',
+              width: '100%',
+              maxHeight: 'min(92vh, 690px)',
+              margin: 'auto',
+              padding: 0,
+              borderRadius: '16px',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              background: '#FFFFFF',
+              boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.35)',
+              border: '1px solid #E2E8F0'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Sticky Header */}
+            <div
+              className="modal-top"
+              style={{
+                padding: '16px 22px',
+                background: '#FFFFFF',
+                borderBottom: '1px solid #E2E8F0',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexShrink: 0
+              }}
+            >
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'rgba(124, 58, 237, 0.12)', color: '#7C3AED', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <UserPlus size={22} strokeWidth={2.3} />
+                <div style={{
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '10px',
+                  background: 'rgba(124, 58, 237, 0.12)',
+                  color: '#7C3AED',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}>
+                  <UserPlus size={20} strokeWidth={2.4} />
                 </div>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#0F172A' }}>Add New Customer Profile</h3>
+                  <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: '#0F172A' }}>Add New Customer Profile</h3>
                   <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#64748B' }}>Create client record for booking appointments and loyalty tracking.</p>
                 </div>
               </div>
-              <button className="btn-close-x" onClick={() => setShowAddCustomerModal(false)} style={{ fontSize: '22px', background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}>×</button>
+              <button
+                type="button"
+                className="btn-close-x"
+                onClick={() => setShowAddCustomerModal(false)}
+                style={{
+                  fontSize: '20px',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '8px',
+                  background: '#F1F5F9',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#64748B',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                ×
+              </button>
             </div>
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              const cleanPhone = (newCust.phone || '').replace(/\D/g, '');
-              if (cleanPhone.length !== 10) {
-                showToast("⚠️ Please enter a valid 10-digit mobile number.");
-                return;
-              }
-              addCustomer({
-                ...newCust,
-                phone: `+91 ${cleanPhone}`
-              });
-              setShowAddCustomerModal(false);
-            }} style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div className="form-group-looks">
-                <label style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '5px', background: 'rgba(124, 58, 237, 0.12)', color: '#7C3AED' }}>
-                    <User size={12} strokeWidth={2.5} />
-                  </span>
-                  <span>Customer Name</span> <span style={{ color: '#EF4444' }}>*</span>
-                </label>
-                <input type="text" required className="looks-input" placeholder="Enter customer full name" value={newCust.name} onChange={(e) => setNewCust({ ...newCust, name: e.target.value })} />
-              </div>
 
-              <div className="form-group-looks-grid">
+            {/* Modal Form */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const cleanPhone = (newCust.phone || '').replace(/\D/g, '');
+                if (cleanPhone.length !== 10) {
+                  showToast("⚠️ Please enter a valid 10-digit mobile number.");
+                  return;
+                }
+                addCustomer({
+                  ...newCust,
+                  phone: `+91 ${cleanPhone}`
+                });
+                setNewCust({ name: '', phone: '', email: '', tier: 'Gold Member', type: 'Regular', gender: '', dob: '', address: '', city: '', notes: '' });
+                setShowAddCustomerModal(false);
+              }}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                flex: 1,
+                minHeight: 0,
+                overflow: 'hidden'
+              }}
+            >
+              {/* Scrollable Form Body */}
+              <div
+                style={{
+                  flex: 1,
+                  overflowY: 'auto',
+                  padding: '18px 22px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '13px'
+                }}
+              >
+                {/* Row 1: Name & Type */}
+                <div className="form-group-looks-grid">
+                  <div className="form-group-looks" style={{ flex: 1.5 }}>
+                    <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A', marginBottom: '5px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '5px', background: 'rgba(124, 58, 237, 0.12)', color: '#7C3AED' }}>
+                        <User size={12} strokeWidth={2.5} />
+                      </span>
+                      <span>Customer Name</span> <span style={{ color: '#EF4444' }}>*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      className="looks-input"
+                      placeholder="Enter customer full name"
+                      value={newCust.name || ''}
+                      onChange={(e) => setNewCust({ ...newCust, name: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-group-looks" style={{ flex: 1 }}>
+                    <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A', marginBottom: '5px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '5px', background: 'rgba(217, 119, 6, 0.12)', color: '#D97706' }}>
+                        <Award size={12} strokeWidth={2.5} />
+                      </span>
+                      <span>Customer Type</span>
+                    </label>
+                    <select
+                      className="looks-input"
+                      value={newCust.type || 'Regular'}
+                      onChange={(e) => setNewCust({ ...newCust, type: e.target.value })}
+                    >
+                      <option value="Regular">Regular Client</option>
+                      <option value="New">New Client</option>
+                      <option value="VIP">VIP Guest</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Row 2: Mobile & Email */}
+                <div className="form-group-looks-grid">
+                  <div className="form-group-looks">
+                    <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A', marginBottom: '5px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '5px', background: 'rgba(22, 163, 74, 0.12)', color: '#16A34A' }}>
+                        <Phone size={12} strokeWidth={2.5} />
+                      </span>
+                      <span>Mobile Number</span> <span style={{ color: '#EF4444' }}>*</span>
+                    </label>
+                    <input
+                      type="tel"
+                      inputMode="numeric"
+                      required
+                      maxLength={10}
+                      pattern="[0-9]{10}"
+                      className="looks-input"
+                      placeholder="10-digit mobile number"
+                      value={newCust.phone || ''}
+                      onChange={(e) => setNewCust({ ...newCust, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
+                    />
+                    {newCust.phone ? (
+                      newCust.phone.length === 10 ? (
+                        <small style={{ color: '#10B981', fontSize: '11px', display: 'block', marginTop: '3px', fontWeight: 600 }}>✓ Valid 10-digit number</small>
+                      ) : (
+                        <small style={{ color: '#EF4444', fontSize: '11px', display: 'block', marginTop: '3px' }}>10 digits required ({newCust.phone.length}/10)</small>
+                      )
+                    ) : null}
+                  </div>
+                  <div className="form-group-looks">
+                    <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A', marginBottom: '5px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '5px', background: 'rgba(2, 132, 199, 0.12)', color: '#0284C7' }}>
+                        <Mail size={12} strokeWidth={2.5} />
+                      </span>
+                      <span>Email Address</span>
+                    </label>
+                    <input
+                      type="email"
+                      className="looks-input"
+                      placeholder="client@example.com"
+                      value={newCust.email || ''}
+                      onChange={(e) => setNewCust({ ...newCust, email: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                {/* Row 3: Gender & Date of Birth */}
+                <div className="form-group-looks-grid">
+                  <div className="form-group-looks">
+                    <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A', marginBottom: '5px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '5px', background: 'rgba(79, 70, 229, 0.12)', color: '#4F46E5' }}>
+                        <UserCheck size={12} strokeWidth={2.5} />
+                      </span>
+                      <span>Gender</span>
+                    </label>
+                    <select
+                      className="looks-input"
+                      value={newCust.gender || ''}
+                      onChange={(e) => setNewCust({ ...newCust, gender: e.target.value })}
+                    >
+                      <option value="">Select Gender</option>
+                      <option value="Female">Female</option>
+                      <option value="Male">Male</option>
+                      <option value="Other">Other / Unisex</option>
+                    </select>
+                  </div>
+                  <div className="form-group-looks">
+                    <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A', marginBottom: '5px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '5px', background: 'rgba(217, 119, 6, 0.12)', color: '#D97706' }}>
+                        <CalendarDays size={12} strokeWidth={2.5} />
+                      </span>
+                      <span>Date of Birth</span>
+                    </label>
+                    <input
+                      type="date"
+                      className="looks-input"
+                      value={newCust.dob || ''}
+                      onChange={(e) => setNewCust({ ...newCust, dob: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                {/* Row 4: Address & City */}
+                <div className="form-group-looks-grid">
+                  <div className="form-group-looks" style={{ flex: 1.5 }}>
+                    <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A', marginBottom: '5px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '5px', background: 'rgba(225, 29, 72, 0.12)', color: '#E11D48' }}>
+                        <MapPin size={12} strokeWidth={2.5} />
+                      </span>
+                      <span>Address</span>
+                    </label>
+                    <input
+                      type="text"
+                      className="looks-input"
+                      placeholder="Enter street address"
+                      value={newCust.address || ''}
+                      onChange={(e) => setNewCust({ ...newCust, address: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-group-looks" style={{ flex: 1 }}>
+                    <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A', marginBottom: '5px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '5px', background: 'rgba(2, 132, 199, 0.12)', color: '#0284C7' }}>
+                        <Building2 size={12} strokeWidth={2.5} />
+                      </span>
+                      <span>City</span>
+                    </label>
+                    <input
+                      type="text"
+                      className="looks-input"
+                      placeholder="e.g. Mumbai"
+                      value={newCust.city || ''}
+                      onChange={(e) => setNewCust({ ...newCust, city: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                {/* Row 5: Notes / Preferences */}
                 <div className="form-group-looks">
-                  <label style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '5px', background: 'rgba(22, 163, 74, 0.12)', color: '#16A34A' }}>
-                      <Phone size={12} strokeWidth={2.5} />
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A', marginBottom: '5px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '5px', background: 'rgba(71, 85, 105, 0.12)', color: '#475569' }}>
+                      <FileText size={12} strokeWidth={2.5} />
                     </span>
-                    <span>Mobile Number</span> <span style={{ color: '#EF4444' }}>*</span>
+                    <span>Notes / Preferences (Optional)</span>
                   </label>
-                  <input
-                    type="tel"
-                    inputMode="numeric"
-                    required
-                    maxLength={10}
-                    pattern="[0-9]{10}"
+                  <textarea
                     className="looks-input"
-                    placeholder="10-digit mobile number"
-                    value={newCust.phone}
-                    onChange={(e) => setNewCust({ ...newCust, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
+                    rows={2}
+                    style={{ resize: 'vertical', minHeight: '52px' }}
+                    placeholder="Any preferences, allergies, or requirements..."
+                    value={newCust.notes || ''}
+                    onChange={(e) => setNewCust({ ...newCust, notes: e.target.value })}
                   />
-                  {newCust.phone ? (
-                    newCust.phone.length === 10 ? (
-                      <small style={{ color: '#10B981', fontSize: '11px', display: 'block', marginTop: '3px', fontWeight: 600 }}>✓ Valid 10-digit number</small>
-                    ) : (
-                      <small style={{ color: '#EF4444', fontSize: '11px', display: 'block', marginTop: '3px' }}>10 digits required ({newCust.phone.length}/10)</small>
-                    )
-                  ) : null}
-                </div>
-                <div className="form-group-looks">
-                  <label style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '5px', background: 'rgba(2, 132, 199, 0.12)', color: '#0284C7' }}>
-                      <Mail size={12} strokeWidth={2.5} />
-                    </span>
-                    <span>Email Address</span>
-                  </label>
-                  <input type="email" className="looks-input" placeholder="client@example.com" value={newCust.email} onChange={(e) => setNewCust({ ...newCust, email: e.target.value })} />
                 </div>
               </div>
 
-              <div className="form-group-looks-grid">
-                <div className="form-group-looks">
-                  <label style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '5px', background: 'rgba(79, 70, 229, 0.12)', color: '#4F46E5' }}>
-                      <UserCheck size={12} strokeWidth={2.5} />
-                    </span>
-                    <span>Gender</span>
-                  </label>
-                  <select className="looks-input" value={newCust.gender || ''} onChange={(e) => setNewCust({ ...newCust, gender: e.target.value })}>
-                    <option value="">Select Gender</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-                <div className="form-group-looks">
-                  <label style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '5px', background: 'rgba(217, 119, 6, 0.12)', color: '#D97706' }}>
-                      <CalendarDays size={12} strokeWidth={2.5} />
-                    </span>
-                    <span>Date of Birth</span>
-                  </label>
-                  <input type="date" className="looks-input" value={newCust.dob || ''} onChange={(e) => setNewCust({ ...newCust, dob: e.target.value })} />
-                </div>
-              </div>
-
-              <div className="form-group-looks">
-                <label style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '5px', background: 'rgba(225, 29, 72, 0.12)', color: '#E11D48' }}>
-                    <MapPin size={12} strokeWidth={2.5} />
-                  </span>
-                  <span>Address</span>
-                </label>
-                <textarea className="looks-input" rows={2} placeholder="Enter street address" value={newCust.address || ''} onChange={(e) => setNewCust({ ...newCust, address: e.target.value })}></textarea>
-              </div>
-
-              <div className="form-group-looks-grid">
-                <div className="form-group-looks">
-                  <label style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '5px', background: 'rgba(2, 132, 199, 0.12)', color: '#0284C7' }}>
-                      <Building2 size={12} strokeWidth={2.5} />
-                    </span>
-                    <span>City</span>
-                  </label>
-                  <input type="text" className="looks-input" placeholder="e.g. Mumbai" value={newCust.city || ''} onChange={(e) => setNewCust({ ...newCust, city: e.target.value })} />
-                </div>
-                <div className="form-group-looks">
-                  <label style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '5px', background: 'rgba(217, 119, 6, 0.12)', color: '#D97706' }}>
-                      <Award size={12} strokeWidth={2.5} />
-                    </span>
-                    <span>Customer Type</span>
-                  </label>
-                  <select className="looks-input" value={newCust.type || 'Regular'} onChange={(e) => setNewCust({ ...newCust, type: e.target.value })}>
-                    <option value="Regular">Regular</option>
-                    <option value="New">New</option>
-                    <option value="VIP">VIP</option>
-                  </select>
-                </div>
-              </div>
-
-
-
-              <div style={{ display: 'flex', gap: '12px', marginTop: '6px' }}>
-                <button type="button" className="btn-secondary" onClick={() => setShowAddCustomerModal(false)} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #D1D5DB', background: 'white', cursor: 'pointer', fontWeight: 600 }}>Cancel</button>
-                <button type="submit" className="btn-gold-action" style={{ flex: 1, padding: '10px', borderRadius: '8px', fontWeight: 600 }}>Save Customer</button>
+              {/* Modal Sticky Footer */}
+              <div
+                style={{
+                  flexShrink: 0,
+                  padding: '13px 22px',
+                  background: '#F8FAFC',
+                  borderTop: '1px solid #E2E8F0',
+                  display: 'flex',
+                  gap: '12px',
+                  justifyContent: 'flex-end',
+                  alignItems: 'center'
+                }}
+              >
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => setShowAddCustomerModal(false)}
+                  style={{
+                    padding: '9px 18px',
+                    borderRadius: '8px',
+                    border: '1px solid #D1D5DB',
+                    background: '#FFFFFF',
+                    color: '#374151',
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                    fontSize: '13px'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-gold-action"
+                  style={{
+                    padding: '9px 22px',
+                    borderRadius: '8px',
+                    fontWeight: 700,
+                    fontSize: '13px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Save Customer
+                </button>
               </div>
             </form>
           </div>
