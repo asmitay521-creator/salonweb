@@ -98,6 +98,18 @@ export const SalonProvider = ({ children }) => {
               appointments: [apt, ...list]
             };
           });
+        } else if (event.data?.type === 'APPOINTMENT_UPDATED' && event.data?.appointment) {
+          const apt = event.data.appointment;
+          setData(prev => ({
+            ...prev,
+            appointments: (prev.appointments || []).map(a => a.id === apt.id ? { ...a, ...apt } : a)
+          }));
+        } else if (event.data?.type === 'APPOINTMENT_DELETED' && event.data?.appointmentId) {
+          const aptId = event.data.appointmentId;
+          setData(prev => ({
+            ...prev,
+            appointments: (prev.appointments || []).filter(a => a.id !== aptId)
+          }));
         }
       };
     }
@@ -422,6 +434,66 @@ export const SalonProvider = ({ children }) => {
       addAuditLog(`Marked payment Paid for #${aptId} (₹${targetApt.finalAmount || targetApt.amount})`, "Billing");
       showToast(`💰 Payment of ₹${targetApt.finalAmount || targetApt.amount} marked as Paid!`);
     }
+  };
+
+  const updateAppointment = (aptId, updatedFields) => {
+    let updatedApt = null;
+    setData(prev => {
+      const appointments = (prev.appointments || []).map(a => {
+        if (a.id === aptId) {
+          const finalAmt = updatedFields.amount !== undefined 
+            ? parseFloat(updatedFields.amount) || 0 
+            : (a.finalAmount !== undefined ? a.finalAmount : a.amount);
+          updatedApt = { 
+            ...a, 
+            ...updatedFields,
+            amount: updatedFields.amount !== undefined ? parseFloat(updatedFields.amount) || 0 : a.amount,
+            finalAmount: finalAmt
+          };
+          return updatedApt;
+        }
+        return a;
+      });
+      return { ...prev, appointments };
+    });
+
+    if (updatedApt) {
+      syncToFirestore('appointments', aptId, updatedApt);
+      try {
+        if (typeof window !== 'undefined' && window.BroadcastChannel) {
+          const channel = new BroadcastChannel('SALON_PORTAL_SYNC');
+          channel.postMessage({ type: 'APPOINTMENT_UPDATED', appointment: updatedApt });
+          channel.close();
+        }
+      } catch (e) {}
+      addAuditLog(`Updated service #${aptId} (${updatedApt.customerName})`, "Service");
+      showToast(`✏️ Service details for ${updatedApt.customerName} updated successfully!`);
+    }
+  };
+
+  const deleteAppointment = (aptId) => {
+    let deletedName = '';
+    setData(prev => {
+      const target = (prev.appointments || []).find(a => a.id === aptId);
+      if (target) deletedName = target.customerName;
+      return {
+        ...prev,
+        appointments: (prev.appointments || []).filter(a => a.id !== aptId)
+      };
+    });
+
+    deleteFromFirestore('appointments', aptId);
+
+    try {
+      if (typeof window !== 'undefined' && window.BroadcastChannel) {
+        const channel = new BroadcastChannel('SALON_PORTAL_SYNC');
+        channel.postMessage({ type: 'APPOINTMENT_DELETED', appointmentId: aptId });
+        channel.close();
+      }
+    } catch (e) {}
+
+    addAuditLog(`Deleted service #${aptId}`, "Service");
+    showToast(`🗑️ Service record deleted successfully!`);
   };
 
   const generatePOSInvoice = (invData) => {
@@ -1711,6 +1783,8 @@ export const SalonProvider = ({ children }) => {
       getCurrentSalon,
       setCurrentSalonId,
       createAppointment,
+      updateAppointment,
+      deleteAppointment,
       updateAppointmentStatus,
       markAppointmentPaid,
       generatePOSInvoice,

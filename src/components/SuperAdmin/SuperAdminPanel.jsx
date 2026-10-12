@@ -2,15 +2,17 @@ import React, { useState } from 'react';
 import { useSalon } from '../../context/SalonContext';
 import { 
   User, Calendar, Clock, DollarSign, ArrowLeft, LogOut, CheckCircle,
-  LayoutDashboard, CalendarDays, Users, Scissors, FileText, Award, TrendingUp, Star
+  LayoutDashboard, CalendarDays, Users, Scissors, FileText, Award, TrendingUp, Star,
+  Edit2, Trash2, Save, X
 } from 'lucide-react';
 
 export default function SuperAdminPanel({ onReturnHome }) {
-  const { data, logout, createAppointment, showToast } = useSalon();
+  const { data, logout, createAppointment, updateAppointment, deleteAppointment, showToast } = useSalon();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [newCustomer, setNewCustomer] = useState({ name: '', phone: '', service: '', amount: '', notes: '' });
   const [serviceFlows, setServiceFlows] = useState([]); // Array of tasks in progress
   const [showForm, setShowForm] = useState(false);
+  const [editingApt, setEditingApt] = useState(null);
 
   const currentStaffMember = (data.staff || []).find(s => 
     s.username === data.currentUser?.username || 
@@ -42,6 +44,40 @@ export default function SuperAdminPanel({ onReturnHome }) {
     });
     setNewCustomer({ name: '', phone: '', service: '', amount: '', notes: '' });
     setShowForm(false);
+  };
+
+  const handleOpenEdit = (apt) => {
+    setEditingApt({
+      id: apt.id,
+      customerName: apt.customerName || '',
+      customerPhone: apt.customerPhone || apt.phone || '',
+      serviceName: apt.serviceName || apt.service || '',
+      amount: apt.finalAmount || apt.amount || '',
+      notes: apt.notes || ''
+    });
+  };
+
+  const handleSaveEdit = (e) => {
+    e.preventDefault();
+    if (!editingApt.customerName.trim() || !editingApt.serviceName.trim()) {
+      showToast('⚠️ Please enter customer name and service provided.');
+      return;
+    }
+    updateAppointment(editingApt.id, {
+      customerName: editingApt.customerName.trim(),
+      customerPhone: editingApt.customerPhone.trim(),
+      serviceName: editingApt.serviceName.trim(),
+      amount: parseFloat(editingApt.amount) || 0,
+      notes: editingApt.notes || ''
+    });
+    setEditingApt(null);
+  };
+
+  const handleDeleteAppointment = (apt) => {
+    const confirmDelete = window.confirm(`Are you sure you want to delete the service details for "${apt.customerName || 'this customer'}"? This will also remove it from the Admin billing dashboard.`);
+    if (confirmDelete) {
+      deleteAppointment(apt.id);
+    }
   };
 
   const employeeName = data.currentUser?.name || currentStaffMember.name || 'Staff Employee';
@@ -298,11 +334,12 @@ export default function SuperAdminPanel({ onReturnHome }) {
                       <table className="custom-table" style={{ margin: 0 }}>
                         <thead>
                           <tr>
-                            <th>Date & Time</th>
+                            <th>Date &amp; Time</th>
                             <th>Customer Name</th>
                             <th>Phone</th>
                             <th>Service</th>
                             <th>Amount (₹)</th>
+                            <th style={{ textAlign: 'center' }}>Actions</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -313,6 +350,50 @@ export default function SuperAdminPanel({ onReturnHome }) {
                               <td>{apt.customerPhone}</td>
                               <td>{apt.serviceName}</td>
                               <td style={{ color: 'var(--gold-primary)', fontWeight: 'bold' }}>₹{apt.amount}</td>
+                              <td style={{ textAlign: 'center' }}>
+                                <div style={{ display: 'inline-flex', gap: '8px', alignItems: 'center', justifyContent: 'center' }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenEdit(apt)}
+                                    title="Edit Service Details"
+                                    style={{
+                                      background: 'rgba(212, 175, 55, 0.15)',
+                                      color: 'var(--gold-primary)',
+                                      border: '1px solid rgba(212, 175, 55, 0.3)',
+                                      padding: '5px 10px',
+                                      borderRadius: '6px',
+                                      fontSize: '12px',
+                                      fontWeight: 600,
+                                      cursor: 'pointer',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '4px'
+                                    }}
+                                  >
+                                    <Edit2 size={13} /> Edit
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteAppointment(apt)}
+                                    title="Delete Service Details"
+                                    style={{
+                                      background: 'rgba(239, 68, 68, 0.12)',
+                                      color: '#EF4444',
+                                      border: '1px solid rgba(239, 68, 68, 0.3)',
+                                      padding: '5px 10px',
+                                      borderRadius: '6px',
+                                      fontSize: '12px',
+                                      fontWeight: 600,
+                                      cursor: 'pointer',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '4px'
+                                    }}
+                                  >
+                                    <Trash2 size={13} /> Delete
+                                  </button>
+                                </div>
+                              </td>
                             </tr>
                           ))}
                         </tbody>
@@ -578,6 +659,151 @@ export default function SuperAdminPanel({ onReturnHome }) {
           )}
         </section>
       </div>
+
+      {/* EDIT SERVICE DETAILS MODAL */}
+      {editingApt && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.75)',
+            backdropFilter: 'blur(5px)',
+            zIndex: 99999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px'
+          }}
+          onClick={() => setEditingApt(null)}
+        >
+          <div
+            style={{
+              background: '#1e293b',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '16px',
+              maxWidth: '480px',
+              width: '100%',
+              padding: '28px',
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.5)',
+              color: '#fff'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Edit2 size={20} style={{ color: 'var(--gold-primary)' }} />
+                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#fff' }}>Edit Service Details</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingApt(null)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#94a3b8',
+                  fontSize: '22px',
+                  cursor: 'pointer',
+                  lineHeight: 1
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontSize: '13px', marginBottom: '6px', color: '#cbd5e1' }}>Customer Name *</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  required
+                  value={editingApt.customerName}
+                  onChange={(e) => setEditingApt({ ...editingApt, customerName: e.target.value })}
+                  placeholder="e.g. Rahul Sharma"
+                />
+              </div>
+
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontSize: '13px', marginBottom: '6px', color: '#cbd5e1' }}>Phone Number *</label>
+                <input
+                  type="tel"
+                  className="form-control"
+                  required
+                  maxLength={10}
+                  pattern="[0-9]{10}"
+                  title="Please enter 10 digits"
+                  value={editingApt.customerPhone}
+                  onChange={(e) => setEditingApt({ ...editingApt, customerPhone: e.target.value.replace(/\D/g, '') })}
+                  placeholder="10-digit mobile number"
+                />
+              </div>
+
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontSize: '13px', marginBottom: '6px', color: '#cbd5e1' }}>Service Provided *</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  required
+                  value={editingApt.serviceName}
+                  onChange={(e) => setEditingApt({ ...editingApt, serviceName: e.target.value })}
+                  placeholder="e.g. Haircut &amp; Styling"
+                />
+              </div>
+
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontSize: '13px', marginBottom: '6px', color: '#cbd5e1' }}>Amount (₹) *</label>
+                <input
+                  type="number"
+                  className="form-control"
+                  required
+                  min="0"
+                  value={editingApt.amount}
+                  onChange={(e) => setEditingApt({ ...editingApt, amount: e.target.value })}
+                  placeholder="500"
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setEditingApt(null)}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    borderRadius: '8px',
+                    border: '1px solid #475569',
+                    background: 'transparent',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                    fontSize: '13px'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-gold"
+                  style={{
+                    flex: 1.5,
+                    padding: '12px',
+                    borderRadius: '8px',
+                    fontWeight: 700,
+                    fontSize: '13px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <Save size={15} /> Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
