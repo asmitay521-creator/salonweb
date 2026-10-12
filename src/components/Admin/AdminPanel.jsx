@@ -18,7 +18,7 @@ import {
 
 export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }) {
   const {
-    data, getCurrentSalon, updateAppointmentStatus,
+    data, getCurrentSalon, updateAppointmentStatus, markAppointmentPaid,
     generatePOSInvoice, addStock, addProduct, updateProduct, deleteProduct, addStaff, updateStaff, deleteStaff, toggleStaffStatus,
     addExpense, addCoupon, addLead, updateLead, updateLeadStatus, addLeadFollowUp, bookLeadAppointment, markLeadServiceDone, convertLeadToCustomer, deleteLead,
     addIncentiveRule, deleteIncentiveRule, addServiceItem, deleteServiceItem,
@@ -211,7 +211,16 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
   const [showPOSReceiptModal, setShowPOSReceiptModal] = useState(false);
 
   const salon = getCurrentSalon();
-  const allAppointments = data.appointments || [];
+  // Sort all appointments newest first by createdAt or date/time
+  const allAppointments = [...(data.appointments || [])].sort((a, b) => {
+    const timeA = a.createdAt ? new Date(a.createdAt).getTime() : new Date(`${a.date} ${a.time || '00:00'}`).getTime();
+    const timeB = b.createdAt ? new Date(b.createdAt).getTime() : new Date(`${b.date} ${b.time || '00:00'}`).getTime();
+    return (timeB || 0) - (timeA || 0);
+  });
+
+  // Dedicated staff completed services filters
+  const staffCompletedServices = allAppointments.filter(a => a.status === 'Completed');
+  const staffCompletedPendingBilling = allAppointments.filter(a => a.status === 'Completed' && a.paymentStatus === 'Pending');
 
   // Charts references
   const revChartRef = useRef(null);
@@ -235,7 +244,7 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
     .filter(inv => inv.date === todayStr)
     .reduce((sum, inv) => sum + (inv.totalAmount || 0), 0);
   const todayAppointmentsRevenue = (allAppointments || [])
-    .filter(a => a.date === todayStr && a.paymentStatus === 'Paid')
+    .filter(a => a.date === todayStr && (a.paymentStatus === 'Paid' || a.status === 'Completed'))
     .reduce((sum, a) => sum + (a.finalAmount || a.amount || 0), 0);
   const todayOrdersRevenue = (data.orders || [])
     .filter(o => o.date === todayStr && o.paymentStatus === 'Paid')
@@ -599,10 +608,20 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
 
   // Top performers list dynamically calculated from actual transactions
   const topEmployees = (data.staff || []).map((st, i) => {
-    const staffAppointments = (data.appointments || []).filter(a => a.staffId === st.id || a.staffName === st.name);
-    const staffInvoices = (data.invoices || []).filter(inv => inv.staffId === st.id || inv.staffName === st.name);
+    const staffAppointments = (data.appointments || []).filter(a => 
+      a.staffId === st.id || 
+      a.stylistId === st.id || 
+      (st.username && (a.staffId === st.username || a.stylistId === st.username)) ||
+      (a.staffName && st.name && a.staffName.toLowerCase() === st.name.toLowerCase()) ||
+      (a.stylistName && st.name && a.stylistName.toLowerCase() === st.name.toLowerCase())
+    );
+    const staffInvoices = (data.invoices || []).filter(inv => 
+      inv.staffId === st.id || 
+      (st.username && inv.staffId === st.username) ||
+      (inv.staffName && st.name && inv.staffName.toLowerCase() === st.name.toLowerCase())
+    );
     const servicesCount = staffAppointments.length + staffInvoices.reduce((sum, inv) => sum + (inv.items?.length || 1), 0);
-    const revenue = staffAppointments.filter(a => a.paymentStatus === 'Paid').reduce((sum, a) => sum + (a.finalAmount || a.amount || 0), 0) +
+    const revenue = staffAppointments.filter(a => a.paymentStatus === 'Paid' || a.status === 'Completed').reduce((sum, a) => sum + (a.finalAmount || a.amount || 0), 0) +
       staffInvoices.reduce((sum, inv) => sum + (inv.totalAmount || 0), 0);
     const commissionRate = st.commissionRate ? st.commissionRate / 100 : 0.12;
     const incentive = Math.round(revenue * commissionRate);
@@ -1545,6 +1564,91 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                       <p className="greeting-sub">Live operations and performance dashboard for LOOKS PROFESSIONAL.</p>
                     </div>
                   </div>
+
+                  {/* Staff Completed Services Alert & Billing Section */}
+                  {staffCompletedPendingBilling.length > 0 && (
+                    <div style={{
+                      background: 'linear-gradient(135deg, rgba(212, 163, 115, 0.16) 0%, rgba(30, 41, 59, 0.95) 100%)',
+                      border: '1px solid rgba(212, 163, 115, 0.45)',
+                      borderRadius: '16px',
+                      padding: '20px 24px',
+                      marginBottom: '24px',
+                      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.25)'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(212, 163, 115, 0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <CheckCircle2 size={22} color="var(--gold-primary)" />
+                          </div>
+                          <div>
+                            <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              Services Completed by Staff - Awaiting Billing
+                              <span style={{ background: 'var(--gold-primary)', color: '#000', fontSize: '11px', fontWeight: 800, padding: '2px 8px', borderRadius: '12px' }}>
+                                {staffCompletedPendingBilling.length} New
+                              </span>
+                            </h4>
+                            <p style={{ margin: '3px 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>
+                              Employees completed these services and submitted details to the admin dashboard.
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          className="btn-outline-gold"
+                          style={{ fontSize: '12px', padding: '6px 14px' }}
+                          onClick={() => { setActiveModule('appointments'); setAptFilter('completed'); }}
+                        >
+                          View In Appointments Registry →
+                        </button>
+                      </div>
+
+                      <div className="table-container" style={{ margin: 0, background: 'rgba(15, 23, 42, 0.55)', borderRadius: '12px' }}>
+                        <table className="custom-table" style={{ margin: 0 }}>
+                          <thead>
+                            <tr>
+                              <th>Date &amp; Time</th>
+                              <th>Employee / Stylist</th>
+                              <th>Customer Name &amp; Phone</th>
+                              <th>Service Provided</th>
+                              <th>Amount (₹)</th>
+                              <th>Action</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {staffCompletedPendingBilling.map(apt => (
+                              <tr key={apt.id}>
+                                <td>{apt.date} <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{apt.time}</span></td>
+                                <td><strong style={{ color: 'var(--gold-primary)' }}>{apt.staffName || apt.stylistName || 'Staff Employee'}</strong></td>
+                                <td>
+                                  <strong>{apt.customerName}</strong>
+                                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{apt.customerPhone || 'N/A'}</div>
+                                </td>
+                                <td>{apt.serviceName}</td>
+                                <td><strong style={{ color: '#10B981', fontSize: '15px' }}>₹{apt.finalAmount || apt.amount || 0}</strong></td>
+                                <td>
+                                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                    <button
+                                      className="btn-gold"
+                                      style={{ padding: '6px 12px', fontSize: '11px', whiteSpace: 'nowrap' }}
+                                      onClick={() => markAppointmentPaid(apt.id, 'Cash')}
+                                    >
+                                      ✓ Collect &amp; Mark Paid
+                                    </button>
+                                    <button
+                                      className="btn-outline-gold"
+                                      style={{ padding: '6px 10px', fontSize: '11px', whiteSpace: 'nowrap' }}
+                                      onClick={() => setSelectedAppointmentDetails(apt)}
+                                    >
+                                      Details
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
 
                   {/* 6 KPI Cards Grid */}
                   <div className="looks-kpi-grid">
@@ -3589,7 +3693,8 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
 
                   {/* 2. Employee Services Assignment Matrix */}
                   {employeeSubTab === 'services' && (
-                    <div className="looks-table-card">
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                      <div className="looks-table-card">
                       <table className="looks-master-table">
                         <thead>
                           <tr>
@@ -3649,7 +3754,89 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                         </tbody>
                       </table>
                     </div>
-                  )}
+
+                    {/* Completed Services Submitted by Staff Members */}
+                    <div className="looks-table-card" style={{ marginTop: '24px' }}>
+                      <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                        <div>
+                          <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                            Completed Services Submitted by Team Members
+                          </h4>
+                          <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+                            Live record of services finished and submitted by employees from their portal.
+                          </p>
+                        </div>
+                        <span style={{ fontSize: '12px', background: 'rgba(212, 163, 115, 0.15)', color: 'var(--gold-primary)', padding: '4px 10px', borderRadius: '12px', fontWeight: 700 }}>
+                          {staffCompletedServices.length} Total Completed
+                        </span>
+                      </div>
+                      <table className="looks-master-table">
+                        <thead>
+                          <tr>
+                            <th>Date &amp; Time</th>
+                            <th>Employee / Stylist</th>
+                            <th>Customer Details</th>
+                            <th>Service Provided</th>
+                            <th>Amount (₹)</th>
+                            <th>Status</th>
+                            <th style={{ textAlign: 'center' }}>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {staffCompletedServices.length === 0 ? (
+                            <tr>
+                              <td colSpan={7} className="empty-table-cell">
+                                <div className="looks-empty-state">
+                                  <Scissors size={32} />
+                                  <h4>No completed services submitted yet</h4>
+                                  <p>When employees finish a service and submit details from the employee portal, they appear here instantly.</p>
+                                </div>
+                              </td>
+                            </tr>
+                          ) : (
+                            staffCompletedServices.map(apt => (
+                              <tr key={apt.id}>
+                                <td>{apt.date} <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{apt.time}</span></td>
+                                <td><strong style={{ color: 'var(--gold-primary)' }}>{apt.staffName || apt.stylistName || 'Staff Employee'}</strong></td>
+                                <td>
+                                  <strong>{apt.customerName}</strong><br />
+                                  <span className="text-sub-muted">{apt.customerPhone || 'N/A'}</span>
+                                </td>
+                                <td>{apt.serviceName}</td>
+                                <td><strong className="price-bold">₹{apt.finalAmount || apt.amount || 0}</strong></td>
+                                <td>
+                                  <span className={`status-pill ${apt.paymentStatus === 'Paid' ? 'status-completed' : 'status-upcoming'}`}>
+                                    {apt.paymentStatus === 'Paid' ? 'Paid' : 'Pending Billing'}
+                                  </span>
+                                </td>
+                                <td style={{ textAlign: 'center' }}>
+                                  <div style={{ display: 'inline-flex', gap: '6px' }}>
+                                    {apt.paymentStatus !== 'Paid' && (
+                                      <button
+                                        className="btn-gold-action"
+                                        style={{ padding: '4px 8px', fontSize: '11px' }}
+                                        onClick={() => markAppointmentPaid(apt.id, 'Cash')}
+                                      >
+                                        Mark Paid
+                                      </button>
+                                    )}
+                                    <button
+                                      className="btn-table-action"
+                                      style={{ padding: '4px 8px', fontSize: '11px' }}
+                                      onClick={() => setSelectedAppointmentDetails(apt)}
+                                    >
+                                      Details
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
 
                   {/* 3. Unified Incentive Tab (Incentive Rules & Commission Payouts) */}
                   {employeeSubTab === 'incentive' && (
@@ -5912,6 +6099,17 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                         </button>
                         <button
                           type="button"
+                          className={`pos-mode-btn ${posViewMode === 'staff_services' ? 'active' : ''}`}
+                          onClick={() => setPosViewMode('staff_services')}
+                        >
+                          <CheckCircle size={15} />
+                          <span>Staff Completed Services ({staffCompletedPendingBilling.length})</span>
+                          {staffCompletedPendingBilling.length > 0 && (
+                            <span className="pos-cart-count-badge" style={{ background: '#10B981' }}>{staffCompletedPendingBilling.length}</span>
+                          )}
+                        </button>
+                        <button
+                          type="button"
                           className={`pos-mode-btn ${posViewMode === 'history' ? 'active' : ''}`}
                           onClick={() => setPosViewMode('history')}
                         >
@@ -6534,8 +6732,186 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                           </div>
                         </div>
                       </div>
+                    ) : posViewMode === 'staff_services' ? (
+                      /* STAFF COMPLETED SERVICES VIEW */
+                      <div className="pos-history-container">
+                        <div className="pos-history-header" style={{ alignItems: 'flex-start' }}>
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                              <span style={{ 
+                                background: '#10B981', 
+                                color: '#fff', 
+                                fontSize: '10px', 
+                                fontWeight: 800, 
+                                padding: '2px 8px', 
+                                borderRadius: '12px', 
+                                textTransform: 'uppercase' 
+                              }}>
+                                Staff Submissions
+                              </span>
+                              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#0F172A' }}>
+                                Services Completed by Staff — Ready for Billing &amp; Invoicing
+                              </h3>
+                            </div>
+                            <p style={{ margin: 0, fontSize: '13px', color: '#64748B' }}>
+                              These services were completed and sent by your employees from the Staff Portal. Verify, approve, or generate an instant invoice.
+                            </p>
+                          </div>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                              type="button"
+                              style={{
+                                padding: '8px 16px',
+                                borderRadius: '20px',
+                                fontSize: '12px',
+                                fontWeight: 700,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                background: '#F1F5F9',
+                                border: '1px solid #E2E8F0',
+                                color: '#0F172A',
+                                cursor: 'pointer'
+                              }}
+                              onClick={() => setPosViewMode('register')}
+                            >
+                              <ShoppingCart size={14} /> Back to Register
+                            </button>
+                          </div>
+                        </div>
+
+                        {staffCompletedPendingBilling.length === 0 ? (
+                          <div className="pos-empty-catalog" style={{ margin: '40px auto', maxWidth: 460 }}>
+                            <CheckCircle size={44} color="#10B981" />
+                            <h4>All Staff Services Billed!</h4>
+                            <p>There are no pending completed services waiting for billing. All staff submissions have been invoiced.</p>
+                            <button
+                              type="button"
+                              className="btn-gold-action"
+                              style={{ padding: '8px 20px', borderRadius: '20px', fontSize: '12px' }}
+                              onClick={() => setPosViewMode('register')}
+                            >
+                              Go to Register
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="pos-invoices-table-wrap">
+                            <table className="pos-invoices-table">
+                              <thead>
+                                <tr>
+                                  <th>Apt # / Time</th>
+                                  <th>Customer Details</th>
+                                  <th>Service Performed</th>
+                                  <th>Stylist / Employee</th>
+                                  <th style={{ textAlign: 'right' }}>Amount</th>
+                                  <th style={{ textAlign: 'center' }}>Staff Status</th>
+                                  <th style={{ textAlign: 'center' }}>Billing Action</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {staffCompletedPendingBilling.map((apt) => (
+                                  <tr key={apt.id}>
+                                    <td>
+                                      <div style={{ fontWeight: 800, color: '#0D9488', fontSize: '12.5px' }}>{apt.id}</div>
+                                      <div style={{ fontSize: '11px', color: '#64748B' }}>{apt.date} • {apt.time}</div>
+                                    </td>
+                                    <td>
+                                      <strong style={{ color: '#0F172A', fontSize: '13px' }}>{apt.customerName}</strong>
+                                      <div style={{ fontSize: '11px', color: '#64748B' }}>{apt.customerPhone || apt.phone || 'No Phone'}</div>
+                                    </td>
+                                    <td>
+                                      <span style={{ background: 'rgba(212, 175, 55, 0.1)', color: '#92400E', padding: '4px 9px', borderRadius: '6px', fontSize: '12px', fontWeight: 700 }}>
+                                        {apt.serviceName}
+                                      </span>
+                                    </td>
+                                    <td>
+                                      <strong style={{ color: '#334155', fontSize: '12.5px' }}>{apt.stylistName || apt.staffName || 'Staff Member'}</strong>
+                                    </td>
+                                    <td style={{ textAlign: 'right' }}>
+                                      <strong style={{ fontSize: '15px', color: '#0F172A', fontWeight: 900 }}>
+                                        ₹{(apt.finalAmount || apt.amount || 0).toLocaleString()}
+                                      </strong>
+                                    </td>
+                                    <td style={{ textAlign: 'center' }}>
+                                      <span style={{ 
+                                        background: '#DCFCE7', 
+                                        color: '#15803D', 
+                                        padding: '4px 10px', 
+                                        borderRadius: '12px', 
+                                        fontSize: '11px', 
+                                        fontWeight: 800,
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '4px'
+                                      }}>
+                                        <CheckCircle2 size={12} /> Service Done
+                                      </span>
+                                    </td>
+                                    <td style={{ textAlign: 'center' }}>
+                                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                                        <button
+                                          type="button"
+                                          style={{
+                                            padding: '6px 12px',
+                                            borderRadius: '6px',
+                                            fontSize: '11.5px',
+                                            fontWeight: 800,
+                                            background: '#10B981',
+                                            color: '#fff',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '4px'
+                                          }}
+                                          onClick={() => markAppointmentPaid(apt.id)}
+                                          title="Mark Payment as Received and Cleared"
+                                        >
+                                          <Check size={13} /> Collect &amp; Mark Paid
+                                        </button>
+                                        <button
+                                          type="button"
+                                          style={{
+                                            padding: '6px 10px',
+                                            borderRadius: '6px',
+                                            fontSize: '11.5px',
+                                            fontWeight: 700,
+                                            background: '#0F172A',
+                                            color: '#fff',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '4px'
+                                          }}
+                                          onClick={() => {
+                                            setPosCustName(apt.customerName || '');
+                                            setPosCustPhone(apt.customerPhone || apt.phone || '');
+                                            setPosCustEmail(apt.customerEmail || apt.email || '');
+                                            setPosStaffId(apt.stylistId || apt.staffId || (data.staff && data.staff[0]?.id) || '');
+                                            setPosCart([{
+                                              type: 'service',
+                                              id: apt.serviceId || 'srv_custom_' + apt.id,
+                                              name: apt.serviceName || 'Completed Service',
+                                              price: Number(apt.finalAmount || apt.amount || 0),
+                                              qty: 1
+                                            }]);
+                                            setPosViewMode('register');
+                                          }}
+                                          title="Load into POS Register to add products or print custom receipt"
+                                        >
+                                          <Printer size={13} /> Open in POS
+                                        </button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
                     ) : (
-                      /* SECOND VIEW: TODAY'S POS INVOICES / RECEIPTS HISTORY */
                       <div className="pos-history-container">
                         <div className="pos-history-header">
                           <div>

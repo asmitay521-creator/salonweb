@@ -398,6 +398,29 @@ export const INITIAL_SALON_DATA = {
       bio: "Expert in deep keratin rebuilding, Brazilian Botox smoothing, precision butterfly layering, and royal red-carpet bridal hairstyles.",
       photo: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=600&q=80",
       skills: ["Keratin Treatment", "Botox Hair", "Layered Cuts", "Bridal Hair"]
+    },
+    {
+      id: "stf_emp",
+      salonId: "salon_01",
+      name: "Staff Employee",
+      username: "employee",
+      password: "employee123",
+      employeeId: "EMP-101",
+      role: "Senior Stylist & Grooming Expert",
+      category: "Hair Specialist",
+      gender: "unisex",
+      phone: "+91 98765 43210",
+      email: "employee@looksprofessional.com",
+      rating: 4.92,
+      reviewsCount: 164,
+      experience: "5 Years",
+      commissionRate: 15,
+      status: "Available",
+      accreditation: "Looks Professional Academy",
+      tagline: "Precision Cuts & Styling Master",
+      bio: "Dedicated salon stylist expert in classic and modern cuts, grooming rituals, hair spa, and bespoke treatments.",
+      photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80",
+      skills: ["Precision Cuts", "Hair Styling", "Beard Sculpting", "Hair Spa"]
     }
   ],
 

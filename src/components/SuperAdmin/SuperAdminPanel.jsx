@@ -12,35 +12,49 @@ export default function SuperAdminPanel({ onReturnHome }) {
   const [serviceFlows, setServiceFlows] = useState([]); // Array of tasks in progress
   const [showForm, setShowForm] = useState(false);
 
+  const currentStaffMember = (data.staff || []).find(s => 
+    s.username === data.currentUser?.username || 
+    s.id === data.currentUser?.id || 
+    s.name === data.currentUser?.name
+  ) || (data.staff || []).find(s => s.id === 'stf_emp') || { id: 'stf_emp', name: 'Staff Employee' };
+
   const handleAddCustomer = (e) => {
     e.preventDefault();
+    if (!newCustomer.name.trim() || !newCustomer.service.trim()) {
+      showToast('⚠️ Please enter customer name and service provided.');
+      return;
+    }
+    const aptAmount = parseFloat(newCustomer.amount) || 0;
     createAppointment({
-      customerName: newCustomer.name,
-      customerPhone: newCustomer.phone,
-      serviceName: newCustomer.service,
-      amount: parseFloat(newCustomer.amount) || 0,
-      stylistId: data.currentUser?.username || data.currentUser?.id,
-      stylistName: data.currentUser?.name,
-      staffId: data.currentUser?.username || data.currentUser?.id,
-      staffName: data.currentUser?.name,
+      customerName: newCustomer.name.trim(),
+      customerPhone: newCustomer.phone.trim(),
+      serviceName: newCustomer.service.trim(),
+      amount: aptAmount,
+      stylistId: currentStaffMember.id,
+      stylistName: currentStaffMember.name,
+      staffId: currentStaffMember.id,
+      staffName: currentStaffMember.name,
       date: new Date().toISOString().split('T')[0],
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       status: 'Completed',
       paymentStatus: 'Pending',
-      notes: newCustomer.notes
+      notes: newCustomer.notes || `Completed service submitted by ${currentStaffMember.name}`
     });
-    showToast(`✅ Service details for ${newCustomer.name} submitted to Admin!`);
     setNewCustomer({ name: '', phone: '', service: '', amount: '', notes: '' });
     setShowForm(false);
   };
 
-  const employeeName = data.currentUser?.name || 'Staff Employee';
-  const myAppointments = data.appointments.filter(a => 
-    a.stylistId === data.currentUser?.username || 
-    a.staffId === data.currentUser?.username ||
-    a.staffId === data.currentUser?.id ||
-    a.stylistName?.includes(employeeName) ||
-    a.staffName?.includes(employeeName)
+  const employeeName = data.currentUser?.name || currentStaffMember.name || 'Staff Employee';
+  const currentStaffId = data.currentUser?.id || data.currentUser?.username || currentStaffMember.id;
+  const myAppointments = (data.appointments || []).filter(a => 
+    a.stylistId === currentStaffId || 
+    a.staffId === currentStaffId ||
+    a.stylistId === 'stf_emp' ||
+    a.staffId === 'stf_emp' ||
+    a.stylistName?.toLowerCase().includes(employeeName.toLowerCase()) ||
+    a.staffName?.toLowerCase().includes(employeeName.toLowerCase()) ||
+    a.staffName?.toLowerCase().includes('staff') ||
+    a.stylistName?.toLowerCase().includes('staff')
   );
   const todayApts = myAppointments.filter(a => a.date === new Date().toISOString().split('T')[0]);
 
@@ -380,10 +394,24 @@ export default function SuperAdminPanel({ onReturnHome }) {
                         <td>₹{flow.amount}</td>
                         <td>
                           <button className="btn-gold" style={{ fontSize: '12px' }} onClick={() => {
+                            createAppointment({
+                              customerName: flow.name,
+                              customerPhone: flow.phone || '+91 98000 00000',
+                              serviceName: flow.service,
+                              amount: parseFloat(flow.amount) || 500,
+                              stylistId: currentStaffMember.id,
+                              stylistName: currentStaffMember.name,
+                              staffId: currentStaffMember.id,
+                              staffName: currentStaffMember.name,
+                              date: flow.date || new Date().toISOString().split('T')[0],
+                              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                              status: 'Completed',
+                              paymentStatus: 'Pending',
+                              notes: 'Completed service submitted by ' + currentStaffMember.name
+                            });
                             setServiceFlows(serviceFlows.map(f => f.id === flow.id ? { ...f, status: 'Billed' } : f));
-                            alert('Bill Successful! Service Record Automatically Saved.');
                             setActiveTab('services');
-                          }}>Generate Bill</button>
+                          }}>Generate Bill &amp; Send to Admin</button>
                         </td>
                       </tr>
                     ))}

@@ -65,11 +65,56 @@ export const SalonProvider = ({ children }) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   }, [data]);
 
-  // Firestore Sync Helper for real-time cloud persistence
+  // Cross-Tab and Multi-Window Real-time Sync
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === STORAGE_KEY && e.newValue) {
+        try {
+          const updated = JSON.parse(e.newValue);
+          setData(prev => ({
+            ...prev,
+            ...updated,
+            currentUser: prev.currentUser
+          }));
+        } catch (err) {
+          console.error("Cross-tab storage sync error:", err);
+        }
+      }
+    };
+
+    let channel = null;
+    if (typeof window !== 'undefined' && window.BroadcastChannel) {
+      channel = new BroadcastChannel('SALON_PORTAL_SYNC');
+      channel.onmessage = (event) => {
+        if (event.data?.type === 'APPOINTMENT_CREATED' && event.data?.appointment) {
+          const apt = event.data.appointment;
+          setData(prev => {
+            const list = prev.appointments || [];
+            if (list.some(a => a.id === apt.id)) return prev;
+            return {
+              ...prev,
+              appointments: [apt, ...list]
+            };
+          });
+        }
+      };
+    }
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      if (channel) channel.close();
+    };
+  }, []);
+
+  // Firestore Sync Helper for real-time cloud persistence (sanitizes undefined fields to avoid setDoc crash)
   const syncToFirestore = async (collectionName, docId, docData) => {
     try {
-      if (!db || !docId) return;
-      await setDoc(doc(db, collectionName, String(docId)), docData, { merge: true });
+      if (!db || !docId || !docData) return;
+      const cleanData = JSON.parse(JSON.stringify(docData, (key, value) => {
+        return value === undefined ? null : value;
+      }));
+      await setDoc(doc(db, collectionName, String(docId)), cleanData, { merge: true });
     } catch (err) {
       console.warn(`Firestore sync (${collectionName}/${docId}):`, err.message);
     }
@@ -99,7 +144,7 @@ export const SalonProvider = ({ children }) => {
           const session = {
             role: isSuper ? 'employee' : (isAdmin ? 'admin' : 'customer'),
             id: fbUser.uid,
-            name: fbUser.displayName || (isSuper ? 'Super Admin HQ' : (isAdmin ? 'Branch Admin' : 'Customer Client')),
+            name: fbUser.displayName || (isSuper ? 'Staff Employee' : (isAdmin ? 'Branch Admin' : 'Customer Client')),
             email: fbUser.email || 'user@looksprofessional.com',
             phone: fbUser.phoneNumber || '+91 98111 22334',
             loginTime: new Date().toISOString()
@@ -117,10 +162,6 @@ export const SalonProvider = ({ children }) => {
   useEffect(() => {
     if (!db) return;
 
-    // Firebase listeners are disabled by default in the template to prevent
-    // them from overwriting local changes if Firebase is not fully configured.
-    // Uncomment these if you have configured your own Firebase project and rules.
-
     const mergeWithLocal = (localList = [], firestoreList = []) => {
       const merged = [...localList];
       firestoreList.forEach(item => {
@@ -128,10 +169,14 @@ export const SalonProvider = ({ children }) => {
         if (idx >= 0) {
           merged[idx] = { ...merged[idx], ...item };
         } else {
-          merged.push(item);
+          merged.unshift(item);
         }
       });
-      return merged;
+      return merged.sort((a, b) => {
+        const tA = a.createdAt ? new Date(a.createdAt).getTime() : new Date(`${a.date} ${a.time || '00:00'}`).getTime();
+        const tB = b.createdAt ? new Date(b.createdAt).getTime() : new Date(`${b.date} ${b.time || '00:00'}`).getTime();
+        return (tB || 0) - (tA || 0);
+      });
     };
 
     const unsubApts = onSnapshot(collection(db, 'appointments'), (snapshot) => {
@@ -218,37 +263,49 @@ export const SalonProvider = ({ children }) => {
 
   const createAppointment = (aptData) => {
     const id = "apt_" + Date.now().toString().slice(-6);
+    const amountVal = parseFloat(aptData.amount) || 0;
+    const discountVal = parseFloat(aptData.discount) || 0;
+    const taxVal = aptData.tax !== undefined ? parseFloat(aptData.tax) : Math.round(amountVal * 0.18);
+    const finalAmountVal = aptData.finalAmount !== undefined 
+      ? parseFloat(aptData.finalAmount) 
+      : Math.max(0, amountVal - discountVal + taxVal);
+
+    const staffIdVal = aptData.staffId || aptData.stylistId || data.currentUser?.id || "stf_emp";
+    const staffNameVal = aptData.staffName || aptData.stylistName || data.currentUser?.name || "Staff Employee";
+
     const newApt = {
       id,
-      salonId: aptData.salonId || data.currentSalonId,
-      customerId: aptData.customerId || "cust_guest",
-      customerName: aptData.customerName,
-      customerPhone: aptData.customerPhone,
+      salonId: aptData.salonId || data.currentSalonId || "salon_01",
+      customerId: aptData.customerId || ("cust_" + Date.now().toString().slice(-5)),
+      customerName: aptData.customerName || "Walk-in Guest",
+      customerPhone: aptData.customerPhone || "",
       customerEmail: aptData.customerEmail || "",
-      serviceId: aptData.serviceId,
-      serviceName: aptData.serviceName,
+      serviceId: aptData.serviceId || "srv_custom",
+      serviceName: aptData.serviceName || "Salon Service",
       gender: aptData.gender || "unisex",
-      staffId: aptData.staffId || "stf_01",
-      staffName: aptData.staffName || "Assigned Master Stylist",
-      date: aptData.date,
-      time: aptData.time,
-      duration: aptData.duration || 45,
-      amount: aptData.amount,
-      discount: aptData.discount || 0,
-      tax: aptData.tax || Math.round(aptData.amount * 0.18),
-      finalAmount: aptData.finalAmount || (aptData.amount - (aptData.discount || 0) + Math.round(aptData.amount * 0.18)),
+      staffId: staffIdVal,
+      staffName: staffNameVal,
+      stylistId: staffIdVal,
+      stylistName: staffNameVal,
+      date: aptData.date || new Date().toISOString().split('T')[0],
+      time: aptData.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      duration: parseInt(aptData.duration) || 45,
+      amount: amountVal,
+      discount: discountVal,
+      tax: taxVal,
+      finalAmount: finalAmountVal,
       couponCode: aptData.couponCode || "",
       paymentMethod: aptData.paymentMethod || "Pay at Salon",
       paymentStatus: aptData.paymentStatus || "Pending",
-      status: aptData.status || "Confirmed",
+      status: aptData.status || "Completed",
       notes: aptData.notes || "",
-      createdAt: new Date().toISOString()
+      createdAt: aptData.createdAt || new Date().toISOString()
     };
 
     setData(prev => {
       // update customer visit
-      let customers = [...prev.customers];
-      let cust = customers.find(c => c.phone === newApt.customerPhone || c.id === newApt.customerId);
+      let customers = [...(prev.customers || [])];
+      let cust = customers.find(c => (newApt.customerPhone && c.phone === newApt.customerPhone) || c.id === newApt.customerId);
       if (!cust) {
         cust = {
           id: "cust_" + Date.now().toString().slice(-5),
@@ -264,18 +321,28 @@ export const SalonProvider = ({ children }) => {
         };
         customers.push(cust);
       } else {
-        cust.totalVisits += 1;
-        cust.totalSpend += newApt.finalAmount;
-        cust.loyaltyPoints += Math.round(newApt.finalAmount * 0.05);
+        cust.totalVisits = (cust.totalVisits || 0) + 1;
+        cust.totalSpend = (cust.totalSpend || 0) + newApt.finalAmount;
+        cust.loyaltyPoints = (cust.loyaltyPoints || 0) + Math.round(newApt.finalAmount * 0.05);
         cust.lastVisit = newApt.date;
       }
 
+      const prevApts = prev.appointments || [];
       return {
         ...prev,
-        appointments: [newApt, ...prev.appointments],
+        appointments: [newApt, ...prevApts.filter(a => a.id !== newApt.id)],
         customers
       };
     });
+
+    // Cross-tab broadcast
+    try {
+      if (typeof window !== 'undefined' && window.BroadcastChannel) {
+        const channel = new BroadcastChannel('SALON_PORTAL_SYNC');
+        channel.postMessage({ type: 'APPOINTMENT_CREATED', appointment: newApt });
+        channel.close();
+      }
+    } catch (e) {}
 
     syncToFirestore('appointments', id, newApt);
     if (newApt.customerPhone) {
@@ -287,26 +354,32 @@ export const SalonProvider = ({ children }) => {
       });
     }
 
-    addAuditLog(`New appointment booked: #${id} for ${newApt.customerName}`, "Booking");
-    showToast(`🎉 Appointment Confirmed! ID: #${id} on ${newApt.date} at ${newApt.time}`);
+    addAuditLog(`New service registered: #${id} for ${newApt.customerName} by ${newApt.staffName}`, "Service");
+    if (newApt.status === 'Completed') {
+      showToast(`✅ Service details for ${newApt.customerName} (₹${newApt.amount}) submitted to Admin Dashboard!`);
+    } else {
+      showToast(`🎉 Appointment Confirmed! ID: #${id} on ${newApt.date} at ${newApt.time}`);
+    }
     return newApt;
   };
 
   const updateAppointmentStatus = (aptId, newStatus) => {
+    let updatedApt = null;
     setData(prev => {
-      const appointments = prev.appointments.map(a => {
+      const appointments = (prev.appointments || []).map(a => {
         if (a.id === aptId) {
           const updated = { ...a, status: newStatus };
           if (newStatus === 'Completed') updated.paymentStatus = 'Paid';
+          updatedApt = updated;
           return updated;
         }
         return a;
       });
 
       const apt = prev.appointments.find(a => a.id === aptId);
-      const staff = prev.staff.map(s => {
-        if (apt && s.id === apt.staffId) {
-          if (newStatus === "In-Progress") return { ...s, status: "In-Service" };
+      const staff = (prev.staff || []).map(s => {
+        if (apt && (s.id === apt.staffId || s.name === apt.staffName)) {
+          if (newStatus === "In-Progress" || newStatus === "In-Service") return { ...s, status: "In-Service" };
           if (newStatus === "Completed" || newStatus === "Cancelled") return { ...s, status: "Available" };
         }
         return s;
@@ -322,6 +395,30 @@ export const SalonProvider = ({ children }) => {
 
     addAuditLog(`Appointment #${aptId} status changed to ${newStatus}`, "Service");
     showToast(`✅ Appointment #${aptId} updated to "${newStatus}"`);
+  };
+
+  const markAppointmentPaid = (aptId, paymentMethod = 'Cash') => {
+    let targetApt = null;
+    setData(prev => {
+      const appointments = (prev.appointments || []).map(a => {
+        if (a.id === aptId) {
+          targetApt = { ...a, paymentStatus: 'Paid', status: 'Completed', paymentMethod };
+          return targetApt;
+        }
+        return a;
+      });
+      return { ...prev, appointments };
+    });
+
+    if (targetApt) {
+      syncToFirestore('appointments', aptId, {
+        paymentStatus: 'Paid',
+        status: 'Completed',
+        paymentMethod
+      });
+      addAuditLog(`Marked payment Paid for #${aptId} (₹${targetApt.finalAmount || targetApt.amount})`, "Billing");
+      showToast(`💰 Payment of ₹${targetApt.finalAmount || targetApt.amount} marked as Paid!`);
+    }
   };
 
   const generatePOSInvoice = (invData) => {
@@ -1607,6 +1704,7 @@ export const SalonProvider = ({ children }) => {
       setCurrentSalonId,
       createAppointment,
       updateAppointmentStatus,
+      markAppointmentPaid,
       generatePOSInvoice,
       addStock,
       addProduct,
