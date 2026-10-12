@@ -26,10 +26,12 @@ export const SalonProvider = ({ children }) => {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        
+        const dummyLeadIds = new Set(['lead_101', 'lead_102', 'lead_103', 'lead_104', 'lead_105', 'lead_106', 'lead_107', 'lead_108']);
+        const cleanedLeads = (parsed.leads || []).filter(l => !dummyLeadIds.has(l.id));
         return {
           ...INITIAL_SALON_DATA,
-          ...parsed
+          ...parsed,
+          leads: cleanedLeads
         };
       } catch (e) {
         console.error("Failed to parse saved state", e);
@@ -165,7 +167,8 @@ export const SalonProvider = ({ children }) => {
 
     const unsubLeads = onSnapshot(collection(db, 'leads'), (snapshot) => {
       if (!snapshot.empty) {
-        const firestoreLeads = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        const dummyIds = new Set(['lead_101', 'lead_102', 'lead_103', 'lead_104', 'lead_105', 'lead_106', 'lead_107', 'lead_108']);
+        const firestoreLeads = snapshot.docs.map(d => ({ id: d.id, ...d.data() })).filter(l => !dummyIds.has(l.id));
         setData(prev => ({ ...prev, leads: mergeWithLocal(prev.leads, firestoreLeads) }));
       }
     }, (err) => console.warn('Firestore leads sync notice:', err.message));
@@ -1038,10 +1041,15 @@ export const SalonProvider = ({ children }) => {
       name: custData.name,
       phone: custData.phone,
       email: custData.email || `${custData.name.toLowerCase().replace(/\s+/g, '.')}@gmail.com`,
-      tier: custData.tier || "Gold Member",
+      gender: custData.gender || 'Female',
+      dob: custData.dob || '',
+      address: custData.address || '',
+      city: custData.city || 'Mumbai',
+      notes: custData.notes || '',
+      tier: custData.type === 'VIP' ? 'Diamond VIP' : custData.tier || "Gold Member",
       loyaltyPoints: parseInt(custData.loyaltyPoints || 150),
       totalVisits: parseInt(custData.totalVisits || 1),
-      totalSpend: parseFloat(custData.totalSpend || 1200),
+      totalSpend: parseFloat(custData.totalSpend || 0),
       lastVisit: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
       avatar: custData.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80"
     };
