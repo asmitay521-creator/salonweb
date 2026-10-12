@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { INITIAL_SALON_DATA } from '../data/salonData';
 import { auth, db } from '../firebase';
 import {
@@ -23,6 +23,16 @@ const STORAGE_KEY = 'LOOKS_SALON_PORTAL_V2';
 export const SalonProvider = ({ children }) => {
   const [data, setData] = useState(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
+    const savedAuthUser = JSON.parse(localStorage.getItem('LUMIERE_AUTH_USER') || 'null');
+    const defaultAdminUser = {
+      role: 'admin',
+      id: 'admin_01',
+      name: 'Looks Admin',
+      email: 'admin@looksprofessional.com',
+      phone: '+91 98111 22334'
+    };
+    const initialUser = savedAuthUser || defaultAdminUser;
+
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -31,6 +41,7 @@ export const SalonProvider = ({ children }) => {
         return {
           ...INITIAL_SALON_DATA,
           ...parsed,
+          currentUser: parsed.currentUser || initialUser,
           leads: cleanedLeads
         };
       } catch (e) {
@@ -40,13 +51,7 @@ export const SalonProvider = ({ children }) => {
     return {
       ...INITIAL_SALON_DATA,
       currentSalonId: 'salon_01',
-      currentUser: JSON.parse(localStorage.getItem('LUMIERE_AUTH_USER') || 'null') || {
-        role: 'admin',
-        id: 'admin_01',
-        name: 'Looks Admin',
-        email: 'admin@looksprofessional.com',
-        phone: '+91 98111 22334'
-      },
+      currentUser: initialUser,
       adminPermissions: {
         appointments: true,
         customers: true,
@@ -63,16 +68,39 @@ export const SalonProvider = ({ children }) => {
 
   const [toasts, setToasts] = useState([]);
 
+  // Track the latest serialized state to prevent infinite cross-tab ping-pong loops
+  const lastSavedStateRef = useRef('');
+  const isSyncingFromStorageRef = useRef(false);
+
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    // If this state update was received from another tab via storage event, do NOT write it back
+    if (isSyncingFromStorageRef.current) {
+      isSyncingFromStorageRef.current = false;
+      return;
+    }
+    try {
+      // Exclude currentUser from STORAGE_KEY so tabs with different roles (Admin vs Employee) never fight
+      const { currentUser, ...sharedData } = data;
+      const serialized = JSON.stringify(sharedData);
+      if (serialized !== lastSavedStateRef.current) {
+        lastSavedStateRef.current = serialized;
+        localStorage.setItem(STORAGE_KEY, serialized);
+      }
+    } catch (e) {
+      console.error("Storage save error", e);
+    }
   }, [data]);
 
-  // Cross-Tab and Multi-Window Real-time Sync
+  // Cross-Tab and Multi-Window Real-time Sync (with loop prevention)
   useEffect(() => {
     const handleStorageChange = (e) => {
       if (e.key === STORAGE_KEY && e.newValue) {
+        // If this tab originated the write or already has this state, ignore to prevent feedback loop
+        if (e.newValue === lastSavedStateRef.current) return;
         try {
           const updated = JSON.parse(e.newValue);
+          lastSavedStateRef.current = e.newValue;
+          isSyncingFromStorageRef.current = true;
           setData(prev => ({
             ...prev,
             ...updated,
@@ -183,41 +211,91 @@ export const SalonProvider = ({ children }) => {
         if (idx >= 0) {
           merged[idx] = { ...merged[idx], ...item };
         } else {
+          merged.push(item);
+        }
+      });
+      return merged;
+    };
+
+    const mergeAppointments = (localList = [], firestoreList = []) => {
+      const merged = [...localList];
+      firestoreList.forEach(item => {
+        const idx = merged.findIndex(x => x.id === item.id);
+        if (idx >= 0) {
+          merged[idx] = { ...merged[idx], ...item };
+        } else {
           merged.unshift(item);
         }
       });
       return merged.sort((a, b) => {
-        const tA = a.createdAt ? new Date(a.createdAt).getTime() : new Date(`${a.date} ${a.time || '00:00'}`).getTime();
-        const tB = b.createdAt ? new Date(b.createdAt).getTime() : new Date(`${b.date} ${b.time || '00:00'}`).getTime();
-        return (tB || 0) - (tA || 0);
+        const parseTime = (obj) => {
+          if (!obj) return 0;
+          if (obj.createdAt) {
+            const t = new Date(obj.createdAt).getTime();
+            if (!isNaN(t)) return t;
+          }
+          if (obj.date) {
+            const timeStr = obj.time ? ` ${obj.time}` : ' 00:00';
+            const t = new Date(`${obj.date}${timeStr}`).getTime();
+            if (!isNaN(t)) return t;
+            const t2 = new Date(obj.date).getTime();
+            if (!isNaN(t2)) return t2;
+          }
+          return 0;
+        };
+        const tA = parseTime(a);
+        const tB = parseTime(b);
+        if (tB !== tA) return tB - tA;
+        return String(a.id || '').localeCompare(String(b.id || ''));
       });
+    };
+
+    const areListsEqual = (a = [], b = []) => {
+      if (a.length !== b.length) return false;
+      return JSON.stringify(a) === JSON.stringify(b);
     };
 
     const unsubApts = onSnapshot(collection(db, 'appointments'), (snapshot) => {
       if (!snapshot.empty) {
         const firestoreApts = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-        setData(prev => ({ ...prev, appointments: mergeWithLocal(prev.appointments, firestoreApts) }));
+        setData(prev => {
+          const merged = mergeAppointments(prev.appointments, firestoreApts);
+          if (areListsEqual(prev.appointments, merged)) return prev;
+          return { ...prev, appointments: merged };
+        });
       }
     }, (err) => console.warn('Firestore appointments sync notice:', err.message));
 
     const unsubInv = onSnapshot(collection(db, 'inventory'), (snapshot) => {
       if (!snapshot.empty) {
         const firestoreInv = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-        setData(prev => ({ ...prev, inventory: mergeWithLocal(prev.inventory, firestoreInv) }));
+        setData(prev => {
+          const merged = mergeWithLocal(prev.inventory, firestoreInv);
+          if (areListsEqual(prev.inventory, merged)) return prev;
+          return { ...prev, inventory: merged };
+        });
       }
     }, (err) => console.warn('Firestore inventory sync notice:', err.message));
 
     const unsubStaff = onSnapshot(collection(db, 'staff'), (snapshot) => {
       if (!snapshot.empty) {
         const firestoreStaff = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-        setData(prev => ({ ...prev, staff: mergeWithLocal(prev.staff, firestoreStaff) }));
+        setData(prev => {
+          const merged = mergeWithLocal(prev.staff, firestoreStaff);
+          if (areListsEqual(prev.staff, merged)) return prev;
+          return { ...prev, staff: merged };
+        });
       }
     }, (err) => console.warn('Firestore staff sync notice:', err.message));
 
     const unsubCust = onSnapshot(collection(db, 'customers'), (snapshot) => {
       if (!snapshot.empty) {
         const firestoreCust = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-        setData(prev => ({ ...prev, customers: mergeWithLocal(prev.customers, firestoreCust) }));
+        setData(prev => {
+          const merged = mergeWithLocal(prev.customers, firestoreCust);
+          if (areListsEqual(prev.customers, merged)) return prev;
+          return { ...prev, customers: merged };
+        });
       }
     }, (err) => console.warn('Firestore customers sync notice:', err.message));
 
@@ -225,14 +303,22 @@ export const SalonProvider = ({ children }) => {
       if (!snapshot.empty) {
         const dummyIds = new Set(['lead_101', 'lead_102', 'lead_103', 'lead_104', 'lead_105', 'lead_106', 'lead_107', 'lead_108']);
         const firestoreLeads = snapshot.docs.map(d => ({ id: d.id, ...d.data() })).filter(l => !dummyIds.has(l.id));
-        setData(prev => ({ ...prev, leads: mergeWithLocal(prev.leads, firestoreLeads) }));
+        setData(prev => {
+          const merged = mergeWithLocal(prev.leads, firestoreLeads);
+          if (areListsEqual(prev.leads, merged)) return prev;
+          return { ...prev, leads: merged };
+        });
       }
     }, (err) => console.warn('Firestore leads sync notice:', err.message));
 
     const unsubInvoices = onSnapshot(collection(db, 'invoices'), (snapshot) => {
       if (!snapshot.empty) {
         const firestoreInvoices = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-        setData(prev => ({ ...prev, invoices: mergeWithLocal(prev.invoices, firestoreInvoices) }));
+        setData(prev => {
+          const merged = mergeWithLocal(prev.invoices, firestoreInvoices);
+          if (areListsEqual(prev.invoices, merged)) return prev;
+          return { ...prev, invoices: merged };
+        });
       }
     }, (err) => console.warn('Firestore invoices sync notice:', err.message));
 
@@ -1522,6 +1608,7 @@ export const SalonProvider = ({ children }) => {
       phone: '+91 98920 11223'
     };
     setData(prev => ({ ...prev, currentUser: guest }));
+    window.location.hash = '#/admin-login';
     showToast("🔒 Logged out of Firebase session");
   };
 

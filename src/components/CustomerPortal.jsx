@@ -64,14 +64,14 @@ export default function CustomerPortal({ onOpenBooking, onViewInvoice, onReturnH
 
         {/* Content */}
         <section className="dash-tab-content">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
             <div>
               <h2 style={{ color: '#fff', fontSize: '24px' }}>My Appointments & Visits</h2>
               <p style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>
                 Track your confirmed salon appointments and view tax invoice receipts.
               </p>
             </div>
-            <button className="btn-gold" onClick={onOpenBooking}>
+            <button className="btn-gold" onClick={onOpenBooking} style={{ flexShrink: 0 }}>
               <Plus size={14} /> Book Appointment
             </button>
           </div>

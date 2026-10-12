@@ -13,7 +13,7 @@ import {
   PhoneCall, ExternalLink, RefreshCw, Layers, UserPlus, ShoppingBag, Truck,
   FileText, CheckCircle, Percent, Camera, UploadCloud, Barcode, User, Save,
   Mail, MapPin, Building2, CreditCard, Hash, ShoppingCart, ArrowRight, ArrowDown,
-  ThumbsUp, ThumbsDown, HelpCircle, CalendarPlus, List, Columns, Flame, Lock
+  ThumbsUp, ThumbsDown, HelpCircle, CalendarPlus, List, Columns, Flame, Lock, Menu
 } from 'lucide-react';
 
 export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }) {
@@ -31,6 +31,7 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
   // Navigation State
   // activeModule: 'dashboard' | 'appointments' | 'customers' | 'leads' | 'services' | 'inventory' | 'employees' | 'packages' | 'billing' | 'reports' | 'settings'
   const [activeModule, setActiveModule] = useState('dashboard');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Subtab navigation for multi-tab modules
   const [inventorySubTab, setInventorySubTab] = useState('current_stock'); // 'current_stock' | 'stock_in' | 'stock_out' | 'low_stock' | 'suppliers' | 'product_usage'
@@ -390,63 +391,71 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
       const pkgRevData = pastDays.map(() => 0);
 
       if (revChartRef.current) {
-        if (chartInstance1.current) chartInstance1.current.destroy();
-        chartInstance1.current = new Chart(revChartRef.current, {
-          type: 'bar',
-          data: {
-            labels: dayLabels,
-            datasets: [
-              {
-                label: 'Service Revenue',
-                data: serviceRevData,
-                backgroundColor: '#49B9CA',
-                borderRadius: 6
-              },
-              {
-                label: 'Product Sales',
-                data: prodRevData,
-                backgroundColor: '#D4AF37',
-                borderRadius: 6
-              },
-              {
-                label: 'Packages',
-                data: pkgRevData,
-                backgroundColor: '#248896',
-                borderRadius: 6
-              }
-            ]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: {
-                position: 'top',
-                labels: {
-                  color: '#475569',
-                  font: { family: 'inherit', size: 12, weight: 600 },
-                  boxWidth: 12,
-                  usePointStyle: true
+        if (chartInstance1.current) {
+          chartInstance1.current.data.labels = dayLabels;
+          chartInstance1.current.data.datasets[0].data = serviceRevData;
+          chartInstance1.current.data.datasets[1].data = prodRevData;
+          chartInstance1.current.data.datasets[2].data = pkgRevData;
+          chartInstance1.current.update('none');
+        } else {
+          chartInstance1.current = new Chart(revChartRef.current, {
+            type: 'bar',
+            data: {
+              labels: dayLabels,
+              datasets: [
+                {
+                  label: 'Service Revenue',
+                  data: serviceRevData,
+                  backgroundColor: '#49B9CA',
+                  borderRadius: 6
+                },
+                {
+                  label: 'Product Sales',
+                  data: prodRevData,
+                  backgroundColor: '#D4AF37',
+                  borderRadius: 6
+                },
+                {
+                  label: 'Packages',
+                  data: pkgRevData,
+                  backgroundColor: '#248896',
+                  borderRadius: 6
                 }
-              }
+              ]
             },
-            scales: {
-              x: {
-                grid: { display: false },
-                ticks: { color: '#64748B', font: { size: 11 } }
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: false,
+              plugins: {
+                legend: {
+                  position: 'top',
+                  labels: {
+                    color: '#475569',
+                    font: { family: 'inherit', size: 12, weight: 600 },
+                    boxWidth: 12,
+                    usePointStyle: true
+                  }
+                }
               },
-              y: {
-                beginAtZero: true,
-                grid: { color: 'rgba(0,0,0,0.04)' },
-                ticks: {
-                  color: '#64748B',
-                  font: { size: 11 },
-                  callback: (v) => `₹${v}`
+              scales: {
+                x: {
+                  grid: { display: false },
+                  ticks: { color: '#64748B', font: { size: 11 } }
+                },
+                y: {
+                  beginAtZero: true,
+                  grid: { color: 'rgba(0,0,0,0.04)' },
+                  ticks: {
+                    color: '#64748B',
+                    font: { size: 11 },
+                    callback: (v) => `₹${v}`
+                  }
                 }
               }
             }
-          }
-        });
+          });
+        }
       }
 
       // 2. Dynamic Categories Breakdown
@@ -459,41 +468,49 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
       const catCounts = Object.values(categoryTally);
 
       if (catChartRef.current) {
-        if (chartInstance2.current) chartInstance2.current.destroy();
-        chartInstance2.current = new Chart(catChartRef.current, {
-          type: 'doughnut',
-          data: {
-            labels: catLabels.length > 0 ? catLabels : ['General Services'],
-            datasets: [{
-              data: catCounts.length > 0 ? catCounts : [1],
-              backgroundColor: ['#49B9CA', '#D4AF37', '#248896', '#EB7585', '#8B5CF6', '#10B981', '#F59E0B'],
-              borderWidth: 2,
-              borderColor: '#ffffff'
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            cutout: '72%',
-            plugins: {
-              legend: {
-                position: 'right',
-                labels: {
-                  color: '#475569',
-                  font: { size: 11.5, weight: 500 },
-                  boxWidth: 10,
-                  usePointStyle: true
+        if (chartInstance2.current) {
+          chartInstance2.current.data.labels = catLabels.length > 0 ? catLabels : ['General Services'];
+          chartInstance2.current.data.datasets[0].data = catCounts.length > 0 ? catCounts : [1];
+          chartInstance2.current.update('none');
+        } else {
+          chartInstance2.current = new Chart(catChartRef.current, {
+            type: 'doughnut',
+            data: {
+              labels: catLabels.length > 0 ? catLabels : ['General Services'],
+              datasets: [{
+                data: catCounts.length > 0 ? catCounts : [1],
+                backgroundColor: ['#49B9CA', '#D4AF37', '#248896', '#EB7585', '#8B5CF6', '#10B981', '#F59E0B'],
+                borderWidth: 2,
+                borderColor: '#ffffff'
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: false,
+              cutout: '72%',
+              plugins: {
+                legend: {
+                  position: 'right',
+                  labels: {
+                    color: '#475569',
+                    font: { size: 11.5, weight: 500 },
+                    boxWidth: 10,
+                    usePointStyle: true
+                  }
                 }
               }
             }
-          }
-        });
+          });
+        }
       }
     }
 
     return () => {
-      if (chartInstance1.current) chartInstance1.current.destroy();
-      if (chartInstance2.current) chartInstance2.current.destroy();
+      if (activeModule !== 'dashboard') {
+        if (chartInstance1.current) { chartInstance1.current.destroy(); chartInstance1.current = null; }
+        if (chartInstance2.current) { chartInstance2.current.destroy(); chartInstance2.current = null; }
+      }
     };
   }, [activeModule, selectedAppointmentDetails, data.appointments, data.invoices, data.orders, data.services]);
 
@@ -1080,16 +1097,34 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
 
   return (
     <main className="looks-admin-portal">
+      {/* Mobile Sidebar Backdrop */}
+      {isMobileMenuOpen && (
+        <div 
+          className="looks-sidebar-backdrop" 
+          onClick={() => setIsMobileMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* 1. SIDEBAR NAVIGATION */}
-      <aside className="looks-admin-sidebar">
-        {/* Brand Header (NO BRANCH SELECTOR, LOOKS PROFESSIONAL BRAND) */}
+      <aside className={`looks-admin-sidebar ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
+        {/* Brand Header */}
         <div className="looks-admin-brand">
-          <div className="brand-badge-row">
-            <div className="brand-logo-icon">LP</div>
-            <div className="brand-info">
-              <h2 className="brand-title">LOOKS PROFESSIONAL</h2>
-              <span className="brand-subtitle">UNISEX SALON • ADMIN</span>
+          <div className="brand-badge-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div className="brand-logo-icon">LP</div>
+              <div className="brand-info">
+                <h2 className="brand-title">LOOKS PROFESSIONAL</h2>
+                <span className="brand-subtitle">UNISEX SALON • ADMIN</span>
+              </div>
             </div>
+            <button 
+              className="looks-sidebar-close-btn"
+              onClick={() => setIsMobileMenuOpen(false)}
+              aria-label="Close menu"
+            >
+              <X size={18} />
+            </button>
           </div>
         </div>
 
@@ -1272,24 +1307,32 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
       <div className="looks-admin-main-container">
         {/* TOP HEADER BAR */}
         <header className="looks-admin-topbar">
-          <div className="topbar-left">
+          <div className="topbar-left" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button 
+              className="looks-mobile-menu-btn" 
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label="Toggle Navigation Menu"
+            >
+              {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+            <span className="looks-active-module-badge">{activeModule.toUpperCase()}</span>
+
             {selectedAppointmentDetails && (
               <button className="looks-back-btn" onClick={() => setSelectedAppointmentDetails(null)}>
-                <ArrowLeft size={16} /> Back to Appointments
+                <ArrowLeft size={16} /> Back
               </button>
             )}
           </div>
 
-          <div className="topbar-right">
+          <div className="topbar-right" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div className="topbar-date-pill">
               <CalendarDays size={14} />
-              <span>1 Oct 2026 | Today</span>
+              <span>Today</span>
             </div>
 
-            <button className="topbar-pos-btn" onClick={() => { setActiveModule('billing'); setSelectedAppointmentDetails(null); }}>
-              <PlusCircle size={15} /> Fast POS Billing
+            <button className="topbar-pos-btn" onClick={() => { setActiveModule('billing'); setSelectedAppointmentDetails(null); setIsMobileMenuOpen(false); }}>
+              <PlusCircle size={15} /> <span>Fast POS</span>
             </button>
-
           </div>
         </header>
 
@@ -12539,6 +12582,44 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
           </div>
         </div>
       )}
+      {/* Mobile Bottom Quick Navigation */}
+      <nav className="looks-mobile-bottom-bar" aria-label="Mobile Navigation">
+        <button 
+          className={`looks-bottom-nav-item ${activeModule === 'dashboard' ? 'active' : ''}`}
+          onClick={() => { setActiveModule('dashboard'); setSelectedAppointmentDetails(null); setIsMobileMenuOpen(false); }}
+        >
+          <LayoutGrid size={18} />
+          <span>Dashboard</span>
+        </button>
+        <button 
+          className={`looks-bottom-nav-item ${activeModule === 'appointments' ? 'active' : ''}`}
+          onClick={() => { setActiveModule('appointments'); setSelectedAppointmentDetails(null); setIsMobileMenuOpen(false); }}
+        >
+          <CalendarDays size={18} />
+          <span>Appointments</span>
+        </button>
+        <button 
+          className={`looks-bottom-nav-item ${activeModule === 'billing' ? 'active' : ''}`}
+          onClick={() => { setActiveModule('billing'); setSelectedAppointmentDetails(null); setIsMobileMenuOpen(false); }}
+        >
+          <Receipt size={18} />
+          <span>POS</span>
+        </button>
+        <button 
+          className={`looks-bottom-nav-item ${activeModule === 'leads' ? 'active' : ''}`}
+          onClick={() => { setActiveModule('leads'); setSelectedAppointmentDetails(null); setIsMobileMenuOpen(false); }}
+        >
+          <Target size={18} />
+          <span>Leads</span>
+        </button>
+        <button 
+          className="looks-bottom-nav-item"
+          onClick={() => setIsMobileMenuOpen(true)}
+        >
+          <Menu size={18} />
+          <span>More</span>
+        </button>
+      </nav>
     </main>
   );
 }

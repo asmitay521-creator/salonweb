@@ -3,12 +3,13 @@ import { useSalon } from '../../context/SalonContext';
 import { 
   User, Calendar, Clock, DollarSign, ArrowLeft, LogOut, CheckCircle,
   LayoutDashboard, CalendarDays, Users, Scissors, FileText, Award, TrendingUp, Star,
-  Edit2, Trash2, Save, X
+  Edit2, Trash2, Save, X, Menu
 } from 'lucide-react';
 
 export default function SuperAdminPanel({ onReturnHome }) {
   const { data, logout, createAppointment, updateAppointment, deleteAppointment, showToast } = useSalon();
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [newCustomer, setNewCustomer] = useState({ name: '', phone: '', service: '', amount: '', notes: '' });
   const [serviceFlows, setServiceFlows] = useState([]); // Array of tasks in progress
   const [showForm, setShowForm] = useState(false);
@@ -96,18 +97,58 @@ export default function SuperAdminPanel({ onReturnHome }) {
 
   return (
     <main className="view-section active-view">
+      {/* Mobile Top Header */}
+      <div className="employee-mobile-topbar">
+        <button
+          className="employee-mobile-menu-btn"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          aria-label="Toggle menu"
+        >
+          {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+        </button>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <span style={{ fontWeight: 800, color: 'var(--gold-primary)', fontSize: '13px', letterSpacing: '0.5px' }}>EMPLOYEE PORTAL</span>
+          <span style={{ fontSize: '10px', color: '#94A3B8', textTransform: 'uppercase' }}>{activeTab}</span>
+        </div>
+        <button
+          className="btn-outline-gold"
+          style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '6px' }}
+          onClick={onReturnHome}
+        >
+          Exit
+        </button>
+      </div>
+
+      {/* Mobile Sidebar Backdrop */}
+      {isMobileMenuOpen && (
+        <div
+          className="employee-sidebar-backdrop"
+          onClick={() => setIsMobileMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       <div className="admin-portal-wrapper">
         {/* Sidebar */}
-        <aside className="admin-sidebar">
-          <div className="admin-brand">
-            <h3 style={{ color: 'var(--gold-primary)' }}>EMPLOYEE PORTAL</h3>
-            <p>Welcome, {employeeName}</p>
+        <aside className={`admin-sidebar ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
+          <div className="admin-brand" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <h3 style={{ color: 'var(--gold-primary)' }}>EMPLOYEE PORTAL</h3>
+              <p>Welcome, {employeeName}</p>
+            </div>
+            <button
+              className="looks-sidebar-close-btn"
+              onClick={() => setIsMobileMenuOpen(false)}
+              aria-label="Close menu"
+            >
+              <X size={18} />
+            </button>
           </div>
 
           <ul className="admin-menu-list">
             <li
               className={`admin-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
-              onClick={() => setActiveTab('dashboard')}
+              onClick={() => { setActiveTab('dashboard'); setIsMobileMenuOpen(false); }}
             >
               <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <LayoutDashboard size={16} /> Dashboard
@@ -115,7 +156,7 @@ export default function SuperAdminPanel({ onReturnHome }) {
             </li>
             <li
               className={`admin-nav-item ${activeTab === 'appointments' ? 'active' : ''}`}
-              onClick={() => setActiveTab('appointments')}
+              onClick={() => { setActiveTab('appointments'); setIsMobileMenuOpen(false); }}
             >
               <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <CalendarDays size={16} /> Appointments
@@ -123,7 +164,7 @@ export default function SuperAdminPanel({ onReturnHome }) {
             </li>
             <li
               className={`admin-nav-item ${activeTab === 'customers' ? 'active' : ''}`}
-              onClick={() => setActiveTab('customers')}
+              onClick={() => { setActiveTab('customers'); setIsMobileMenuOpen(false); }}
             >
               <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <CheckCircle size={16} /> Service Completed
@@ -131,7 +172,7 @@ export default function SuperAdminPanel({ onReturnHome }) {
             </li>
             <li
               className={`admin-nav-item ${activeTab === 'services' ? 'active' : ''}`}
-              onClick={() => setActiveTab('services')}
+              onClick={() => { setActiveTab('services'); setIsMobileMenuOpen(false); }}
             >
               <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <Scissors size={16} /> My Services
@@ -139,7 +180,7 @@ export default function SuperAdminPanel({ onReturnHome }) {
             </li>
             <li
               className={`admin-nav-item ${activeTab === 'billing' ? 'active' : ''}`}
-              onClick={() => setActiveTab('billing')}
+              onClick={() => { setActiveTab('billing'); setIsMobileMenuOpen(false); }}
             >
               <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <FileText size={16} /> Billing
@@ -148,7 +189,7 @@ export default function SuperAdminPanel({ onReturnHome }) {
 
             <li
               className={`admin-nav-item ${activeTab === 'profile' ? 'active' : ''}`}
-              onClick={() => setActiveTab('profile')}
+              onClick={() => { setActiveTab('profile'); setIsMobileMenuOpen(false); }}
             >
               <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <User size={16} /> Profile
@@ -195,33 +236,33 @@ export default function SuperAdminPanel({ onReturnHome }) {
               </div>
 
               <div className="section-header" style={{ textAlign: 'left', margin: '30px 0 16px' }}>
-                <h3 style={{ color: '#fff' }}>Recent Appointments</h3>
+                <h3 style={{ color: '#0F172A', fontWeight: 800 }}>Recent Appointments</h3>
               </div>
               
               {myAppointments.length > 0 ? (
-                <div className="table-container">
+                <div className="table-container" style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)' }}>
                   <table className="custom-table">
                     <thead>
-                      <tr>
-                        <th>Date & Time</th>
-                        <th>Employee Name</th>
-                        <th>Customer Name</th>
-                        <th>Service Provided</th>
-                        <th>Amount (₹)</th>
-                        <th>Status</th>
+                      <tr style={{ background: '#F8FAFC' }}>
+                        <th style={{ color: '#0F172A', fontWeight: 800, fontSize: '12.5px' }}>Date &amp; Time</th>
+                        <th style={{ color: '#0F172A', fontWeight: 800, fontSize: '12.5px' }}>Employee Name</th>
+                        <th style={{ color: '#0F172A', fontWeight: 800, fontSize: '12.5px' }}>Customer Name</th>
+                        <th style={{ color: '#0F172A', fontWeight: 800, fontSize: '12.5px' }}>Service Provided</th>
+                        <th style={{ color: '#0F172A', fontWeight: 800, fontSize: '12.5px' }}>Amount (₹)</th>
+                        <th style={{ color: '#0F172A', fontWeight: 800, fontSize: '12.5px' }}>Status</th>
                       </tr>
                     </thead>
                     <tbody>
                       {myAppointments.map(apt => (
                         <tr key={apt.id}>
-                          <td>{apt.date} {apt.time}</td>
-                          <td>{employeeName}</td>
+                          <td style={{ color: '#1E293B', fontWeight: 600 }}>{apt.date} <span style={{ color: '#64748B', fontSize: '12px', fontWeight: 500, marginLeft: '4px' }}>{apt.time}</span></td>
+                          <td style={{ color: '#0F172A', fontWeight: 700 }}>{employeeName}</td>
                           <td>
-                            <strong>{apt.customerName}</strong>
-                            <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>{apt.customerPhone || 'N/A'}</div>
+                            <strong style={{ color: '#0F172A' }}>{apt.customerName}</strong>
+                            <div style={{ fontSize: '12px', color: '#64748B', marginTop: '4px', fontWeight: 500 }}>{apt.customerPhone || 'N/A'}</div>
                           </td>
-                          <td>{apt.serviceName}</td>
-                          <td><strong>₹{apt.amount || 0}</strong></td>
+                          <td><span style={{ background: '#F1F5F9', color: '#0F172A', padding: '4px 10px', borderRadius: '6px', fontWeight: 600, fontSize: '13px', display: 'inline-block' }}>{apt.serviceName}</span></td>
+                          <td><strong style={{ color: '#047857', fontSize: '15px' }}>₹{apt.amount || 0}</strong></td>
                           <td>
                             <span className={`status-pill ${apt.status === 'Completed' ? 'status-completed' : (apt.status === 'Cancelled' ? 'status-cancelled' : 'status-upcoming')}`}>
                               {apt.status}
@@ -233,10 +274,10 @@ export default function SuperAdminPanel({ onReturnHome }) {
                   </table>
                 </div>
               ) : (
-                <div style={{ padding: '40px', textAlign: 'center', background: 'var(--bg-secondary)', borderRadius: '12px' }}>
-                  <Calendar size={40} style={{ color: 'var(--text-muted)', marginBottom: '16px', margin: '0 auto' }} />
-                  <h4 style={{ color: 'var(--text-secondary)' }}>No appointments found.</h4>
-                  <p style={{ color: 'var(--text-muted)' }}>You have no appointments assigned to you yet.</p>
+                <div style={{ padding: '40px', textAlign: 'center', background: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: '16px', boxShadow: '0 4px 16px rgba(0, 0, 0, 0.04)' }}>
+                  <Calendar size={40} style={{ color: '#64748B', marginBottom: '16px', margin: '0 auto' }} />
+                  <h4 style={{ color: '#0F172A', fontWeight: 800 }}>No appointments found.</h4>
+                  <p style={{ color: '#64748B' }}>You have no appointments assigned to you yet.</p>
                 </div>
               )}
             </div>
@@ -292,124 +333,118 @@ export default function SuperAdminPanel({ onReturnHome }) {
             <div>
               <div className="admin-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
                 <div className="admin-page-title">
-                  <h2>Submit Service Details</h2>
-                  <p>Fill out customer and service details after completion. This will be sent to the Admin for billing.</p>
+                  <h2 style={{ color: '#0F172A', fontWeight: 800 }}>Submit Service Details</h2>
+                  <p style={{ color: '#475569', fontSize: '14px', marginTop: '4px' }}>Fill out customer and service details after completion. This will be sent to the Admin for billing.</p>
                 </div>
                 <button 
                   className="btn-gold" 
-                  onClick={() => setShowForm(!showForm)}
-                  style={{ padding: '10px 20px', borderRadius: '8px' }}
+                  onClick={() => setShowForm(true)}
+                  style={{ padding: '10px 22px', borderRadius: '8px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}
                 >
-                  {showForm ? 'Cancel' : '+ Add Details'}
+                  + Add Details
                 </button>
               </div>
               
-              {showForm ? (
-                <div style={{ background: 'var(--bg-secondary)', padding: '40px', borderRadius: '16px', maxWidth: '450px', minHeight: '500px', display: 'flex', flexDirection: 'column', marginTop: '20px' }}>
-                  <form onSubmit={handleAddCustomer} style={{ display: 'flex', flexDirection: 'column', gap: '24px', flex: 1 }}>
-                    <div className="form-group">
-                      <label className="form-label">Customer Name *</label>
-                      <input type="text" className="form-control" required placeholder="e.g. Rahul Sharma" value={newCustomer.name} onChange={e => setNewCustomer({...newCustomer, name: e.target.value})} />
+              <div style={{ marginTop: '20px' }}>
+                {myAppointments.filter(a => a.status === 'Completed').length > 0 ? (
+                  <div className="table-container" style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+                      <h3 style={{ color: '#0F172A', fontWeight: 800, fontSize: '18px', margin: 0 }}>Recently Submitted Services</h3>
+                      <span style={{ fontSize: '13px', color: '#475569', fontWeight: 600 }}>
+                        Total: {myAppointments.filter(a => a.status === 'Completed').length} records
+                      </span>
                     </div>
-                    <div className="form-group">
-                      <label className="form-label">Phone Number *</label>
-                      <input type="tel" className="form-control" required placeholder="10-digit number" pattern="[0-9]{10}" title="Please enter exactly 10 digits" maxLength={10} value={newCustomer.phone} onChange={e => setNewCustomer({...newCustomer, phone: e.target.value.replace(/\D/g, '')})} />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Service Provided *</label>
-                      <input type="text" className="form-control" required placeholder="e.g. Haircut & Styling" value={newCustomer.service} onChange={e => setNewCustomer({...newCustomer, service: e.target.value})} />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Amount (₹) *</label>
-                      <input type="number" className="form-control" required placeholder="500" value={newCustomer.amount} onChange={e => setNewCustomer({...newCustomer, amount: e.target.value})} />
-                    </div>
-                    <button type="submit" className="btn-gold" style={{ width: '100%', marginTop: 'auto', padding: '14px', fontSize: '15px' }}>Submit to Admin Dashboard</button>
-                  </form>
-                </div>
-              ) : (
-                <div style={{ marginTop: '20px' }}>
-                  {myAppointments.filter(a => a.status === 'Completed').length > 0 ? (
-                    <div className="table-container" style={{ background: 'var(--bg-secondary)', borderRadius: '16px', padding: '24px' }}>
-                      <h3 style={{ color: '#fff', marginBottom: '16px', fontSize: '18px' }}>Recently Submitted Services</h3>
-                      <table className="custom-table" style={{ margin: 0 }}>
-                        <thead>
-                          <tr>
-                            <th>Date &amp; Time</th>
-                            <th>Customer Name</th>
-                            <th>Phone</th>
-                            <th>Service</th>
-                            <th>Amount (₹)</th>
-                            <th style={{ textAlign: 'center' }}>Actions</th>
+                    <table className="custom-table" style={{ margin: 0, width: '100%' }}>
+                      <thead>
+                        <tr style={{ background: '#F8FAFC' }}>
+                          <th style={{ color: '#0F172A', fontWeight: 800, fontSize: '12.5px' }}>Date &amp; Time</th>
+                          <th style={{ color: '#0F172A', fontWeight: 800, fontSize: '12.5px' }}>Customer Name</th>
+                          <th style={{ color: '#0F172A', fontWeight: 800, fontSize: '12.5px' }}>Phone</th>
+                          <th style={{ color: '#0F172A', fontWeight: 800, fontSize: '12.5px' }}>Service</th>
+                          <th style={{ color: '#0F172A', fontWeight: 800, fontSize: '12.5px' }}>Amount (₹)</th>
+                          <th style={{ textAlign: 'center', color: '#0F172A', fontWeight: 800, fontSize: '12.5px' }}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {myAppointments.filter(a => a.status === 'Completed').sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time)).map(apt => (
+                          <tr key={apt.id}>
+                            <td style={{ color: '#1E293B', fontWeight: 600 }}>
+                              {apt.date} <span style={{ color: '#64748B', fontSize: '12px', fontWeight: 500, marginLeft: '6px' }}>{apt.time}</span>
+                            </td>
+                            <td style={{ color: '#0F172A', fontWeight: 800, fontSize: '14px' }}>{apt.customerName}</td>
+                            <td style={{ color: '#1E293B', fontWeight: 600, fontSize: '13.5px' }}>{apt.customerPhone || '-'}</td>
+                            <td>
+                              <span style={{ background: '#F1F5F9', color: '#0F172A', padding: '4px 10px', borderRadius: '6px', fontWeight: 600, fontSize: '13px', display: 'inline-block' }}>
+                                {apt.serviceName}
+                              </span>
+                            </td>
+                            <td style={{ color: '#047857', fontWeight: 800, fontSize: '15px' }}>₹{apt.amount}</td>
+                            <td style={{ textAlign: 'center' }}>
+                              <div style={{ display: 'inline-flex', gap: '8px', alignItems: 'center', justifyContent: 'center' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenEdit(apt)}
+                                  title="Edit Service Details"
+                                  style={{
+                                    background: '#EFF6FF',
+                                    color: '#1D4ED8',
+                                    border: '1px solid #BFDBFE',
+                                    padding: '6px 12px',
+                                    borderRadius: '6px',
+                                    fontSize: '12px',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px'
+                                  }}
+                                >
+                                  <Edit2 size={13} /> Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteAppointment(apt)}
+                                  title="Delete Service Details"
+                                  style={{
+                                    background: '#FEF2F2',
+                                    color: '#DC2626',
+                                    border: '1px solid #FECACA',
+                                    padding: '6px 12px',
+                                    borderRadius: '6px',
+                                    fontSize: '12px',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px'
+                                  }}
+                                >
+                                  <Trash2 size={13} /> Delete
+                                </button>
+                              </div>
+                            </td>
                           </tr>
-                        </thead>
-                        <tbody>
-                          {myAppointments.filter(a => a.status === 'Completed').sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time)).map(apt => (
-                            <tr key={apt.id}>
-                              <td>{apt.date} <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{apt.time}</span></td>
-                              <td><strong>{apt.customerName}</strong></td>
-                              <td>{apt.customerPhone}</td>
-                              <td>{apt.serviceName}</td>
-                              <td style={{ color: 'var(--gold-primary)', fontWeight: 'bold' }}>₹{apt.amount}</td>
-                              <td style={{ textAlign: 'center' }}>
-                                <div style={{ display: 'inline-flex', gap: '8px', alignItems: 'center', justifyContent: 'center' }}>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleOpenEdit(apt)}
-                                    title="Edit Service Details"
-                                    style={{
-                                      background: 'rgba(212, 175, 55, 0.15)',
-                                      color: 'var(--gold-primary)',
-                                      border: '1px solid rgba(212, 175, 55, 0.3)',
-                                      padding: '5px 10px',
-                                      borderRadius: '6px',
-                                      fontSize: '12px',
-                                      fontWeight: 600,
-                                      cursor: 'pointer',
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      gap: '4px'
-                                    }}
-                                  >
-                                    <Edit2 size={13} /> Edit
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDeleteAppointment(apt)}
-                                    title="Delete Service Details"
-                                    style={{
-                                      background: 'rgba(239, 68, 68, 0.12)',
-                                      color: '#EF4444',
-                                      border: '1px solid rgba(239, 68, 68, 0.3)',
-                                      padding: '5px 10px',
-                                      borderRadius: '6px',
-                                      fontSize: '12px',
-                                      fontWeight: 600,
-                                      cursor: 'pointer',
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      gap: '4px'
-                                    }}
-                                  >
-                                    <Trash2 size={13} /> Delete
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div style={{ padding: '60px 40px', textAlign: 'center', background: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)' }}>
+                    <div style={{ width: '70px', height: '70px', borderRadius: '50%', background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                      <FileText size={36} style={{ color: '#0F766E' }} />
                     </div>
-                  ) : (
-                    <div style={{ padding: '60px 40px', textAlign: 'center', background: 'var(--bg-secondary)', borderRadius: '16px' }}>
-                      <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(212, 163, 115, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-                        <FileText size={40} style={{ color: 'var(--gold-primary)' }} />
-                      </div>
-                      <h3 style={{ color: '#fff', marginBottom: '8px', fontSize: '24px' }}>Ready to submit details?</h3>
-                      <p style={{ color: 'var(--text-muted)' }}>Click the "+ Add Details" button above to open the form and submit a new completed service.</p>
-                    </div>
-                  )}
-                </div>
-              )}
+                    <h3 style={{ color: '#0F172A', fontWeight: 800, marginBottom: '8px', fontSize: '20px' }}>No Submitted Services Yet</h3>
+                    <p style={{ color: '#475569', fontSize: '14px', marginBottom: '20px' }}>Click the "+ Add Details" button above to submit customer service details to the admin dashboard.</p>
+                    <button 
+                      className="btn-gold" 
+                      onClick={() => setShowForm(true)}
+                      style={{ padding: '10px 24px', borderRadius: '8px', fontWeight: 700 }}
+                    >
+                      + Add Details
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           )}
           {activeTab === 'services' && (
@@ -660,13 +695,164 @@ export default function SuperAdminPanel({ onReturnHome }) {
         </section>
       </div>
 
+      {/* ADD SERVICE DETAILS MODAL */}
+      {showForm && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.72)',
+            backdropFilter: 'blur(5px)',
+            zIndex: 99999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px'
+          }}
+          onClick={() => setShowForm(false)}
+        >
+          <div
+            style={{
+              background: '#FFFFFF',
+              border: '1px solid #CBD5E1',
+              borderRadius: '16px',
+              maxWidth: '480px',
+              width: '100%',
+              padding: '28px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              color: '#0F172A'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #E2E8F0', paddingBottom: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <FileText size={20} style={{ color: '#0F766E' }} />
+                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#0F172A' }}>Submit Service Details</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowForm(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#64748B',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  lineHeight: 1,
+                  padding: '4px'
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={handleAddCustomer} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontSize: '13px', fontWeight: 700, marginBottom: '6px', color: '#0F172A', display: 'block' }}>Customer Name *</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  style={{ background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: '8px', padding: '10px 14px', color: '#0F172A', fontSize: '14px', width: '100%' }}
+                  required
+                  placeholder="e.g. Rahul Sharma"
+                  value={newCustomer.name}
+                  onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
+                  autoFocus
+                />
+              </div>
+
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontSize: '13px', fontWeight: 700, marginBottom: '6px', color: '#0F172A', display: 'block' }}>Phone Number *</label>
+                <input
+                  type="tel"
+                  className="form-control"
+                  style={{ background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: '8px', padding: '10px 14px', color: '#0F172A', fontSize: '14px', width: '100%' }}
+                  required
+                  maxLength={10}
+                  pattern="[0-9]{10}"
+                  title="Please enter exactly 10 digits"
+                  placeholder="10-digit mobile number"
+                  value={newCustomer.phone}
+                  onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value.replace(/\D/g, '') })}
+                />
+              </div>
+
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontSize: '13px', fontWeight: 700, marginBottom: '6px', color: '#0F172A', display: 'block' }}>Service Provided *</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  style={{ background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: '8px', padding: '10px 14px', color: '#0F172A', fontSize: '14px', width: '100%' }}
+                  required
+                  placeholder="e.g. Haircut & Styling"
+                  value={newCustomer.service}
+                  onChange={(e) => setNewCustomer({ ...newCustomer, service: e.target.value })}
+                />
+              </div>
+
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontSize: '13px', fontWeight: 700, marginBottom: '6px', color: '#0F172A', display: 'block' }}>Amount (₹) *</label>
+                <input
+                  type="number"
+                  className="form-control"
+                  style={{ background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: '8px', padding: '10px 14px', color: '#0F172A', fontSize: '14px', width: '100%' }}
+                  required
+                  min="0"
+                  placeholder="500"
+                  value={newCustomer.amount}
+                  onChange={(e) => setNewCustomer({ ...newCustomer, amount: e.target.value })}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowForm(false)}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    borderRadius: '8px',
+                    border: '1px solid #CBD5E1',
+                    background: '#F1F5F9',
+                    color: '#334155',
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                    fontSize: '13px'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-gold"
+                  style={{
+                    flex: 1.5,
+                    padding: '12px',
+                    borderRadius: '8px',
+                    fontWeight: 700,
+                    fontSize: '13px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Submit to Admin
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* EDIT SERVICE DETAILS MODAL */}
       {editingApt && (
         <div
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0, 0, 0, 0.75)',
+            background: 'rgba(15, 23, 42, 0.72)',
             backdropFilter: 'blur(5px)',
             zIndex: 99999,
             display: 'flex',
@@ -678,21 +864,21 @@ export default function SuperAdminPanel({ onReturnHome }) {
         >
           <div
             style={{
-              background: '#1e293b',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
+              background: '#FFFFFF',
+              border: '1px solid #CBD5E1',
               borderRadius: '16px',
               maxWidth: '480px',
               width: '100%',
               padding: '28px',
-              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.5)',
-              color: '#fff'
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              color: '#0F172A'
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #E2E8F0', paddingBottom: '14px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <Edit2 size={20} style={{ color: 'var(--gold-primary)' }} />
-                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#fff' }}>Edit Service Details</h3>
+                <Edit2 size={20} style={{ color: '#0F766E' }} />
+                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#0F172A' }}>Edit Service Details</h3>
               </div>
               <button
                 type="button"
@@ -700,10 +886,11 @@ export default function SuperAdminPanel({ onReturnHome }) {
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: '#94a3b8',
-                  fontSize: '22px',
+                  color: '#64748B',
+                  fontSize: '24px',
                   cursor: 'pointer',
-                  lineHeight: 1
+                  lineHeight: 1,
+                  padding: '4px'
                 }}
               >
                 ×
@@ -712,10 +899,11 @@ export default function SuperAdminPanel({ onReturnHome }) {
 
             <form onSubmit={handleSaveEdit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label" style={{ fontSize: '13px', marginBottom: '6px', color: '#cbd5e1' }}>Customer Name *</label>
+                <label className="form-label" style={{ fontSize: '13px', fontWeight: 700, marginBottom: '6px', color: '#0F172A', display: 'block' }}>Customer Name *</label>
                 <input
                   type="text"
                   className="form-control"
+                  style={{ background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: '8px', padding: '10px 14px', color: '#0F172A', fontSize: '14px', width: '100%' }}
                   required
                   value={editingApt.customerName}
                   onChange={(e) => setEditingApt({ ...editingApt, customerName: e.target.value })}
@@ -724,10 +912,11 @@ export default function SuperAdminPanel({ onReturnHome }) {
               </div>
 
               <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label" style={{ fontSize: '13px', marginBottom: '6px', color: '#cbd5e1' }}>Phone Number *</label>
+                <label className="form-label" style={{ fontSize: '13px', fontWeight: 700, marginBottom: '6px', color: '#0F172A', display: 'block' }}>Phone Number *</label>
                 <input
                   type="tel"
                   className="form-control"
+                  style={{ background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: '8px', padding: '10px 14px', color: '#0F172A', fontSize: '14px', width: '100%' }}
                   required
                   maxLength={10}
                   pattern="[0-9]{10}"
@@ -739,22 +928,24 @@ export default function SuperAdminPanel({ onReturnHome }) {
               </div>
 
               <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label" style={{ fontSize: '13px', marginBottom: '6px', color: '#cbd5e1' }}>Service Provided *</label>
+                <label className="form-label" style={{ fontSize: '13px', fontWeight: 700, marginBottom: '6px', color: '#0F172A', display: 'block' }}>Service Provided *</label>
                 <input
                   type="text"
                   className="form-control"
+                  style={{ background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: '8px', padding: '10px 14px', color: '#0F172A', fontSize: '14px', width: '100%' }}
                   required
                   value={editingApt.serviceName}
                   onChange={(e) => setEditingApt({ ...editingApt, serviceName: e.target.value })}
-                  placeholder="e.g. Haircut &amp; Styling"
+                  placeholder="e.g. Haircut & Styling"
                 />
               </div>
 
               <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label" style={{ fontSize: '13px', marginBottom: '6px', color: '#cbd5e1' }}>Amount (₹) *</label>
+                <label className="form-label" style={{ fontSize: '13px', fontWeight: 700, marginBottom: '6px', color: '#0F172A', display: 'block' }}>Amount (₹) *</label>
                 <input
                   type="number"
                   className="form-control"
+                  style={{ background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: '8px', padding: '10px 14px', color: '#0F172A', fontSize: '14px', width: '100%' }}
                   required
                   min="0"
                   value={editingApt.amount}
@@ -771,9 +962,9 @@ export default function SuperAdminPanel({ onReturnHome }) {
                     flex: 1,
                     padding: '12px',
                     borderRadius: '8px',
-                    border: '1px solid #475569',
-                    background: 'transparent',
-                    color: '#fff',
+                    border: '1px solid #CBD5E1',
+                    background: '#F1F5F9',
+                    color: '#334155',
                     cursor: 'pointer',
                     fontWeight: 600,
                     fontSize: '13px'

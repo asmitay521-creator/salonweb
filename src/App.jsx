@@ -22,11 +22,42 @@ import SuperAdminPanel from './components/SuperAdmin/SuperAdminPanel';
 import { Bell } from 'lucide-react';
 
 
+// Helper to synchronously resolve the route on initial render to prevent flash/overlap
+const resolveInitialRoute = () => {
+  if (typeof window === 'undefined') return 'customer';
+  const hash = (window.location.hash || '').toLowerCase();
+  const path = (window.location.pathname || '').toLowerCase();
+
+  // 1. Explicit Hashes
+  if (hash === '#/contact' || hash === '#contact') return 'contact';
+  if (hash === '#/customer-dash' || hash === '#customer-dash') return 'customer-dash';
+  if (hash === '#/employee' || hash === '#employee') return 'employee';
+  if (hash === '#/admin-login' || hash === '#admin-login') return 'admin-login';
+  if (hash === '#/admin' || hash === '#admin' || hash === '#/admim' || hash === '#admim') {
+    const savedAuth = JSON.parse(localStorage.getItem('LUMIERE_AUTH_USER') || 'null');
+    if (savedAuth && savedAuth.role === 'employee') return 'employee';
+    return 'admin';
+  }
+  if (hash === '#/' || hash === '#' || hash === '') {
+    if (path.endsWith('/contact') || path.endsWith('/contact/')) return 'contact';
+    if (path.endsWith('/customer-dash')) return 'customer-dash';
+    if (path.endsWith('/employee') || path.endsWith('/employee/')) return 'employee';
+    if (path.endsWith('/admin') || path.endsWith('/admin/') || path.endsWith('/admim') || path.endsWith('/admim/')) {
+      const savedAuth = JSON.parse(localStorage.getItem('LUMIERE_AUTH_USER') || 'null');
+      if (savedAuth && savedAuth.role === 'employee') return 'employee';
+      return 'admin';
+    }
+    return 'customer';
+  }
+  // In-page anchor hash on public site
+  return 'customer';
+};
+
 export default function App() {
   const { data, toasts } = useSalon();
 
   // Navigation route: 'customer' | 'customer-dash' | 'contact' | 'admin-login' | 'admin' | 'employee'
-  const [currentView, setCurrentView] = useState('customer');
+  const [currentView, setCurrentView] = useState(resolveInitialRoute);
 
   // Modals
   const [isBookingOpen, setIsBookingOpen] = useState(false);
@@ -41,49 +72,61 @@ export default function App() {
       const path = (window.location.pathname || '').toLowerCase();
       const auth = data.currentUser;
 
-      const isContactPath =
-        path.endsWith('/contact') ||
-        path.endsWith('/contact/') ||
-        hash === '#/contact' ||
-        hash === '#contact';
-
-      const isAdminPath =
-        path.endsWith('/admin') ||
-        path.endsWith('/admin/') ||
-        path.endsWith('/admim') ||
-        path.endsWith('/admim/') ||
-        hash === '#/admin' ||
-        hash === '#admin' ||
-        hash === '#/admim' ||
-        hash === '#admim';
-
-      const isEmployeePath =
-        path.endsWith('/employee') ||
-        path.endsWith('/employee/') ||
-        hash === '#/employee' ||
-        hash === '#employee';
-
-      if (isContactPath) {
-        setCurrentView('contact');
-      } else if (isEmployeePath) {
-        if (auth && auth.role === 'employee') {
-          setCurrentView('employee');
-        } else {
-          setCurrentView('admin-login');
-        }
-      } else if (isAdminPath) {
-        if (auth && auth.role === 'employee') {
-          setCurrentView('employee');
-        } else if (auth && auth.role === 'admin') {
-          setCurrentView('admin');
-        } else {
-          setCurrentView('admin-login');
-        }
-      } else if (hash === '#/customer-dash' || path.endsWith('/customer-dash')) {
-        setCurrentView('customer-dash');
-      } else {
-        setCurrentView('customer');
+      // 1. Explicit Hashes take top priority
+      if (hash === '#/contact' || hash === '#contact') {
+        setCurrentView(prev => prev === 'contact' ? prev : 'contact');
+        return;
       }
+      if (hash === '#/customer-dash' || hash === '#customer-dash') {
+        setCurrentView(prev => prev === 'customer-dash' ? prev : 'customer-dash');
+        return;
+      }
+      if (hash === '#/employee' || hash === '#employee') {
+        const nextView = (auth && (auth.role === 'employee' || auth.role === 'admin')) ? 'employee' : 'admin-login';
+        setCurrentView(prev => prev === nextView ? prev : nextView);
+        return;
+      }
+      if (hash === '#/admin-login' || hash === '#admin-login') {
+        setCurrentView(prev => prev === 'admin-login' ? prev : 'admin-login');
+        return;
+      }
+      if (hash === '#/admin' || hash === '#admin' || hash === '#/admim' || hash === '#admim') {
+        if (auth && auth.role === 'employee') {
+          setCurrentView(prev => prev === 'employee' ? prev : 'employee');
+        } else {
+          setCurrentView(prev => prev === 'admin' ? prev : 'admin');
+        }
+        return;
+      }
+      if (hash === '#/' || hash === '#home' || hash === '#services' || hash === '#about' || hash === '#gallery' || hash === '#reviews' || hash === '#packages') {
+        setCurrentView(prev => prev === 'customer' ? prev : 'customer');
+        return;
+      }
+
+      // 2. If no matching hash, fall back to pathname checks
+      if (path.endsWith('/contact') || path.endsWith('/contact/')) {
+        setCurrentView(prev => prev === 'contact' ? prev : 'contact');
+        return;
+      }
+      if (path.endsWith('/employee') || path.endsWith('/employee/')) {
+        const nextView = (auth && (auth.role === 'employee' || auth.role === 'admin')) ? 'employee' : 'admin-login';
+        setCurrentView(prev => prev === nextView ? prev : nextView);
+        return;
+      }
+      if (path.endsWith('/admin') || path.endsWith('/admin/') || path.endsWith('/admim') || path.endsWith('/admim/')) {
+        if (auth && auth.role === 'employee') {
+          setCurrentView(prev => prev === 'employee' ? prev : 'employee');
+        } else {
+          setCurrentView(prev => prev === 'admin' ? prev : 'admin');
+        }
+        return;
+      }
+      if (path.endsWith('/customer-dash')) {
+        setCurrentView(prev => prev === 'customer-dash' ? prev : 'customer-dash');
+        return;
+      }
+
+      setCurrentView(prev => prev === 'customer' ? prev : 'customer');
     };
 
     window.addEventListener('hashchange', handleUrlRoute);
@@ -94,16 +137,29 @@ export default function App() {
       window.removeEventListener('hashchange', handleUrlRoute);
       window.removeEventListener('popstate', handleUrlRoute);
     };
-  }, [data.currentUser]);
+  }, [data.currentUser?.id, data.currentUser?.role]);
 
   const navigateTo = (view) => {
     setCurrentView(view);
-    if (view === 'customer') window.location.hash = '#/';
-    else if (view === 'customer-dash') window.location.hash = '#/customer-dash';
-    else if (view === 'contact') window.location.hash = '#/contact';
-    else if (view === 'admin-login') window.location.hash = '#/admin';
-    else if (view === 'admin') window.location.hash = '#/admin';
-    else if (view === 'employee') window.location.hash = '#/employee';
+    const targetHash = {
+      'customer': '#/',
+      'customer-dash': '#/customer-dash',
+      'contact': '#/contact',
+      'admin-login': '#/admin-login',
+      'admin': '#/admin',
+      'employee': '#/employee'
+    }[view] || '#/';
+
+    try {
+      if (window.location.pathname !== '/' && window.location.pathname !== '/index.html') {
+        window.history.pushState(null, '', '/' + targetHash);
+      } else {
+        window.location.hash = targetHash;
+      }
+    } catch (e) {
+      window.location.hash = targetHash;
+    }
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
