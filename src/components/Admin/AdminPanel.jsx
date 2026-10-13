@@ -19,6 +19,7 @@ import {
 export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }) {
   const {
     data, getCurrentSalon, updateAppointmentStatus, markAppointmentPaid,
+    createAppointment, updateAppointment, deleteAppointment,
     generatePOSInvoice, addStock, addProduct, updateProduct, deleteProduct, addStaff, updateStaff, deleteStaff, toggleStaffStatus,
     addExpense, addCoupon, addLead, updateLead, updateLeadStatus, addLeadFollowUp, bookLeadAppointment, markLeadServiceDone, convertLeadToCustomer, deleteLead,
     addIncentiveRule, deleteIncentiveRule, addServiceItem, deleteServiceItem,
@@ -57,6 +58,7 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
 
   // Lead filters, Lifecycle Funnel & Search (Fully matching diagram workflow)
   const [leadActiveSubTab, setLeadActiveSubTab] = useState('all_leads'); // 'all_leads' | 'add_lead'
+  const [leadKpiFilter, setLeadKpiFilter] = useState('all'); // 'all' | 'new' | 'followup' | 'interested' | 'converted'
   const [leadStatusFilter, setLeadStatusFilter] = useState('all');
   const [leadSourceFilter, setLeadSourceFilter] = useState('all');
   const [leadServiceFilter, setLeadServiceFilter] = useState('all');
@@ -129,7 +131,126 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
   // Employee filters & Selected Employee for Incentive Rules view
   const [employeeRoleFilter, setEmployeeRoleFilter] = useState('all');
   const [employeeSearch, setEmployeeSearch] = useState('');
-  const [selectedStylistForRule, setSelectedStylistForRule] = useState('Maya Sharma');
+  const [selectedStylistForRule, setSelectedStylistForRule] = useState('all');
+
+  // Employee Daily Services Update state & handlers
+  const [dailyServiceDateFilter, setDailyServiceDateFilter] = useState('');
+  const [dailyServiceStaffFilter, setDailyServiceStaffFilter] = useState('all');
+  const [dailyServiceSearch, setDailyServiceSearch] = useState('');
+  const [showDailyServiceModal, setShowDailyServiceModal] = useState(false);
+  const [editingDailyServiceId, setEditingDailyServiceId] = useState(null);
+  const [dailyServiceForm, setDailyServiceForm] = useState({
+    staffId: '',
+    staffName: '',
+    customerName: '',
+    customerPhone: '',
+    serviceId: '',
+    serviceName: '',
+    amount: '',
+    date: new Date().toISOString().split('T')[0],
+    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    paymentStatus: 'Paid',
+    paymentMethod: 'Cash',
+    notes: ''
+  });
+
+  const handleOpenAddDailyService = () => {
+    const firstStaff = (data.staff || [])[0];
+    const firstService = (data.services || [])[0];
+    setEditingDailyServiceId(null);
+    setDailyServiceForm({
+      staffId: firstStaff ? firstStaff.id : '',
+      staffName: firstStaff ? firstStaff.name : '',
+      customerName: '',
+      customerPhone: '',
+      serviceId: firstService ? firstService.id : '',
+      serviceName: firstService ? firstService.name : '',
+      amount: firstService ? firstService.price : '',
+      date: new Date().toISOString().split('T')[0],
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      paymentStatus: 'Paid',
+      paymentMethod: 'Cash',
+      notes: ''
+    });
+    setShowDailyServiceModal(true);
+  };
+
+  const handleOpenEditDailyService = (apt) => {
+    setEditingDailyServiceId(apt.id);
+    setDailyServiceForm({
+      staffId: apt.staffId || '',
+      staffName: apt.staffName || apt.stylistName || '',
+      customerName: apt.customerName || '',
+      customerPhone: apt.customerPhone || '',
+      serviceId: apt.serviceId || '',
+      serviceName: apt.serviceName || '',
+      amount: apt.finalAmount !== undefined ? apt.finalAmount : (apt.amount || ''),
+      date: apt.date || new Date().toISOString().split('T')[0],
+      time: apt.time || '12:00 PM',
+      paymentStatus: apt.paymentStatus || 'Paid',
+      paymentMethod: apt.paymentMethod || 'Cash',
+      notes: apt.notes || ''
+    });
+    setShowDailyServiceModal(true);
+  };
+
+  const handleSaveDailyService = (e) => {
+    e.preventDefault();
+    if (!dailyServiceForm.customerName.trim()) {
+      showToast('⚠️ Please enter customer name');
+      return;
+    }
+    if (!dailyServiceForm.serviceName.trim()) {
+      showToast('⚠️ Please enter or select a service');
+      return;
+    }
+    const staffObj = (data.staff || []).find(s => s.id === dailyServiceForm.staffId || s.name === dailyServiceForm.staffName);
+    const resolvedStaffName = staffObj ? staffObj.name : (dailyServiceForm.staffName || 'Staff Stylist');
+    const resolvedStaffId = staffObj ? staffObj.id : (dailyServiceForm.staffId || 'stf_01');
+
+    if (editingDailyServiceId) {
+      updateAppointment(editingDailyServiceId, {
+        staffId: resolvedStaffId,
+        staffName: resolvedStaffName,
+        stylistId: resolvedStaffId,
+        stylistName: resolvedStaffName,
+        customerName: dailyServiceForm.customerName,
+        customerPhone: dailyServiceForm.customerPhone,
+        serviceId: dailyServiceForm.serviceId,
+        serviceName: dailyServiceForm.serviceName,
+        amount: parseFloat(dailyServiceForm.amount) || 0,
+        finalAmount: parseFloat(dailyServiceForm.amount) || 0,
+        date: dailyServiceForm.date,
+        time: dailyServiceForm.time,
+        paymentStatus: dailyServiceForm.paymentStatus,
+        paymentMethod: dailyServiceForm.paymentMethod,
+        notes: dailyServiceForm.notes,
+        status: 'Completed'
+      });
+      showToast(`✅ Daily service for ${dailyServiceForm.customerName} updated!`);
+    } else {
+      createAppointment({
+        staffId: resolvedStaffId,
+        staffName: resolvedStaffName,
+        stylistId: resolvedStaffId,
+        stylistName: resolvedStaffName,
+        customerName: dailyServiceForm.customerName,
+        customerPhone: dailyServiceForm.customerPhone,
+        serviceId: dailyServiceForm.serviceId || 'srv_custom',
+        serviceName: dailyServiceForm.serviceName,
+        amount: parseFloat(dailyServiceForm.amount) || 0,
+        finalAmount: parseFloat(dailyServiceForm.amount) || 0,
+        date: dailyServiceForm.date,
+        time: dailyServiceForm.time,
+        paymentStatus: dailyServiceForm.paymentStatus,
+        paymentMethod: dailyServiceForm.paymentMethod,
+        notes: dailyServiceForm.notes,
+        status: 'Completed'
+      });
+      showToast(`✅ Daily service for ${dailyServiceForm.customerName} recorded!`);
+    }
+    setShowDailyServiceModal(false);
+  };
 
   // Appointments filter & Search
   const [aptFilter, setAptFilter] = useState('all');
@@ -160,6 +281,7 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
   const [editingPkg, setEditingPkg] = useState(null);
   const [packageSearch, setPackageSearch] = useState('');
   const [packageCategoryFilter, setPackageCategoryFilter] = useState('all');
+  const [packageKpiFilter, setPackageKpiFilter] = useState('all');
   const [showAddStockInModal, setShowAddStockInModal] = useState(false);
   const [showAddStockOutModal, setShowAddStockOutModal] = useState(false);
   const [showAddSupplierModal, setShowAddSupplierModal] = useState(false);
@@ -1627,91 +1749,6 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                       <p className="greeting-sub">Live operations and performance dashboard for LOOKS PROFESSIONAL.</p>
                     </div>
                   </div>
-
-                  {/* Staff Completed Services Alert & Billing Section */}
-                  {staffCompletedPendingBilling.length > 0 && (
-                    <div style={{
-                      background: 'linear-gradient(135deg, rgba(212, 163, 115, 0.16) 0%, rgba(30, 41, 59, 0.95) 100%)',
-                      border: '1px solid rgba(212, 163, 115, 0.45)',
-                      borderRadius: '16px',
-                      padding: '20px 24px',
-                      marginBottom: '24px',
-                      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.25)'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(212, 163, 115, 0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <CheckCircle2 size={22} color="var(--gold-primary)" />
-                          </div>
-                          <div>
-                            <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              Services Completed by Staff - Awaiting Billing
-                              <span style={{ background: 'var(--gold-primary)', color: '#000', fontSize: '11px', fontWeight: 800, padding: '2px 8px', borderRadius: '12px' }}>
-                                {staffCompletedPendingBilling.length} New
-                              </span>
-                            </h4>
-                            <p style={{ margin: '3px 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>
-                              Employees completed these services and submitted details to the admin dashboard.
-                            </p>
-                          </div>
-                        </div>
-                        <button
-                          className="btn-outline-gold"
-                          style={{ fontSize: '12px', padding: '6px 14px' }}
-                          onClick={() => { setActiveModule('appointments'); setAptFilter('completed'); }}
-                        >
-                          View In Appointments Registry →
-                        </button>
-                      </div>
-
-                      <div className="table-container" style={{ margin: 0, background: 'rgba(15, 23, 42, 0.55)', borderRadius: '12px' }}>
-                        <table className="custom-table" style={{ margin: 0 }}>
-                          <thead>
-                            <tr>
-                              <th>Date &amp; Time</th>
-                              <th>Employee / Stylist</th>
-                              <th>Customer Name &amp; Phone</th>
-                              <th>Service Provided</th>
-                              <th>Amount (₹)</th>
-                              <th>Action</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {staffCompletedPendingBilling.map(apt => (
-                              <tr key={apt.id}>
-                                <td>{apt.date} <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{apt.time}</span></td>
-                                <td><strong style={{ color: 'var(--gold-primary)' }}>{apt.staffName || apt.stylistName || 'Staff Employee'}</strong></td>
-                                <td>
-                                  <strong>{apt.customerName}</strong>
-                                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{apt.customerPhone || 'N/A'}</div>
-                                </td>
-                                <td>{apt.serviceName}</td>
-                                <td><strong style={{ color: '#10B981', fontSize: '15px' }}>₹{apt.finalAmount || apt.amount || 0}</strong></td>
-                                <td>
-                                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                    <button
-                                      className="btn-gold"
-                                      style={{ padding: '6px 12px', fontSize: '11px', whiteSpace: 'nowrap' }}
-                                      onClick={() => markAppointmentPaid(apt.id, 'Cash')}
-                                    >
-                                      ✓ Collect &amp; Mark Paid
-                                    </button>
-                                    <button
-                                      className="btn-outline-gold"
-                                      style={{ padding: '6px 10px', fontSize: '11px', whiteSpace: 'nowrap' }}
-                                      onClick={() => setSelectedAppointmentDetails(apt)}
-                                    >
-                                      Details
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
 
                   {/* 6 KPI Cards Grid */}
                   <div className="looks-kpi-grid">
@@ -3543,10 +3580,11 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                     </div>
                   </div>
 
-                  {/* 4 Simple Tabs */}
+                  {/* 5 Simple Tabs */}
                   <div className="looks-subtab-navigation-strip">
                     {[
                       { id: 'list', label: 'All Employees' },
+                      { id: 'daily_services', label: 'Daily Services Update' },
                       { id: 'services', label: 'Services' },
                       { id: 'incentive', label: 'Incentive' },
                       { id: 'performance', label: 'Performance' }
@@ -3731,6 +3769,406 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                     </div>
                   )}
 
+                  {/* 1.5. Daily Services Update Subtab */}
+                  {employeeSubTab === 'daily_services' && (() => {
+                    const staffList = data.staff || [];
+                    const allApts = data.appointments || [];
+
+                    // Filter appointments for Daily Services
+                    const filteredDailyApts = allApts.filter(apt => {
+                      if (dailyServiceDateFilter && apt.date !== dailyServiceDateFilter) return false;
+                      if (dailyServiceStaffFilter !== 'all') {
+                        const matchStaff = (apt.staffId && String(apt.staffId) === String(dailyServiceStaffFilter)) ||
+                                           (apt.staffName && apt.staffName.toLowerCase() === dailyServiceStaffFilter.toLowerCase()) ||
+                                           (apt.stylistName && apt.stylistName.toLowerCase() === dailyServiceStaffFilter.toLowerCase());
+                        if (!matchStaff) return false;
+                      }
+                      if (dailyServiceSearch) {
+                        const q = dailyServiceSearch.toLowerCase();
+                        const matchQ = (apt.customerName && apt.customerName.toLowerCase().includes(q)) ||
+                                       (apt.customerPhone && apt.customerPhone.includes(q)) ||
+                                       (apt.serviceName && apt.serviceName.toLowerCase().includes(q)) ||
+                                       (apt.staffName && apt.staffName.toLowerCase().includes(q)) ||
+                                       (apt.stylistName && apt.stylistName.toLowerCase().includes(q));
+                        if (!matchQ) return false;
+                      }
+                      return true;
+                    });
+
+                    return (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                        {/* Header Banner & Quick Actions */}
+                        <div style={{
+                          background: '#FFFFFF',
+                          border: '1px solid #E2E8F0',
+                          borderRadius: '14px',
+                          padding: '18px 22px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          flexWrap: 'wrap',
+                          gap: '16px',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                            <div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{
+                                  background: '#FEF3C7',
+                                  color: '#B45309',
+                                  fontSize: '11px',
+                                  fontWeight: 800,
+                                  padding: '2px 8px',
+                                  borderRadius: '12px',
+                                  textTransform: 'uppercase'
+                                }}>
+                                  Live Log
+                                </span>
+                                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#0F172A' }}>
+                                  Daily Services Update &amp; Logs
+                                </h3>
+                              </div>
+                              <p style={{ margin: '3px 0 0', fontSize: '13px', color: '#64748B' }}>
+                                Record, update and verify daily services completed by stylists and employees.
+                              </p>
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            className="btn-gold-action"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              padding: '10px 20px',
+                              borderRadius: '10px',
+                              fontWeight: 700,
+                              fontSize: '13px'
+                            }}
+                            onClick={handleOpenAddDailyService}
+                          >
+                            <Plus size={16} strokeWidth={2.5} /> Log Daily Service
+                          </button>
+                        </div>
+
+                        {/* Interactive Filter Bar */}
+                        <div style={{
+                          background: '#FFFFFF',
+                          border: '1px solid #E2E8F0',
+                          borderRadius: '12px',
+                          padding: '14px 18px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          flexWrap: 'wrap',
+                          gap: '12px',
+                          boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                            {/* Date Picker Filter */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>Date:</label>
+                              <input
+                                type="date"
+                                value={dailyServiceDateFilter}
+                                onChange={(e) => setDailyServiceDateFilter(e.target.value)}
+                                style={{
+                                  padding: '6px 10px',
+                                  borderRadius: '8px',
+                                  border: '1px solid #CBD5E1',
+                                  fontSize: '12.5px',
+                                  background: '#F8FAFC',
+                                  color: '#0F172A',
+                                  cursor: 'pointer'
+                                }}
+                              />
+                              {dailyServiceDateFilter && (
+                                <button
+                                  type="button"
+                                  onClick={() => setDailyServiceDateFilter('')}
+                                  style={{
+                                    fontSize: '11px',
+                                    padding: '4px 8px',
+                                    borderRadius: '6px',
+                                    border: '1px solid #E2E8F0',
+                                    background: '#F1F5F9',
+                                    cursor: 'pointer'
+                                  }}
+                                  title="Show all dates"
+                                >
+                                  Clear Date
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => setDailyServiceDateFilter(new Date().toISOString().split('T')[0])}
+                                style={{
+                                  fontSize: '11px',
+                                  padding: '4px 8px',
+                                  borderRadius: '6px',
+                                  border: '1px solid #CBD5E1',
+                                  background: dailyServiceDateFilter === new Date().toISOString().split('T')[0] ? '#0F172A' : '#FFFFFF',
+                                  color: dailyServiceDateFilter === new Date().toISOString().split('T')[0] ? '#FFFFFF' : '#334155',
+                                  cursor: 'pointer',
+                                  fontWeight: 600
+                                }}
+                              >
+                                Today
+                              </button>
+                            </div>
+
+                            {/* Stylist Filter */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>Stylist:</label>
+                              <select
+                                value={dailyServiceStaffFilter}
+                                onChange={(e) => setDailyServiceStaffFilter(e.target.value)}
+                                style={{
+                                  padding: '6px 12px',
+                                  borderRadius: '8px',
+                                  border: '1px solid #CBD5E1',
+                                  fontSize: '12.5px',
+                                  background: '#F8FAFC',
+                                  color: '#0F172A',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                <option value="all">All Stylists ({staffList.length})</option>
+                                {staffList.map(s => (
+                                  <option key={s.id} value={s.id}>{s.name} ({s.role})</option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+
+                          {/* Search */}
+                          <div className="search-pill-box" style={{ maxWidth: '280px', width: '100%', margin: 0 }}>
+                            <Search size={14} />
+                            <input
+                              type="text"
+                              placeholder="Search customer, phone or service..."
+                              value={dailyServiceSearch}
+                              onChange={(e) => setDailyServiceSearch(e.target.value)}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Master Table of Daily Services */}
+                        <div className="looks-table-card">
+                          <table className="looks-master-table">
+                            <thead>
+                              <tr>
+                                <th>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#0284C7', fontWeight: 800 }}>
+                                    <Clock size={13} strokeWidth={2.5} /> Date &amp; Time
+                                  </span>
+                                </th>
+                                <th>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#7C3AED', fontWeight: 800 }}>
+                                    <User size={13} strokeWidth={2.5} /> Stylist / Employee
+                                  </span>
+                                </th>
+                                <th>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#D97706', fontWeight: 800 }}>
+                                    <Users size={13} strokeWidth={2.5} /> Customer Details
+                                  </span>
+                                </th>
+                                <th>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#DB2777', fontWeight: 800 }}>
+                                    <Scissors size={13} strokeWidth={2.5} /> Service Provided
+                                  </span>
+                                </th>
+                                <th>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#16A34A', fontWeight: 800 }}>
+                                    <IndianRupee size={13} strokeWidth={2.5} /> Amount
+                                  </span>
+                                </th>
+                                <th>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#E11D48', fontWeight: 800 }}>
+                                    <Percent size={13} strokeWidth={2.5} /> Incentive
+                                  </span>
+                                </th>
+                                <th>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#0D9488', fontWeight: 800 }}>
+                                    <CheckCircle2 size={13} strokeWidth={2.5} /> Status
+                                  </span>
+                                </th>
+                                <th style={{ textAlign: 'center' }}>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#64748B', fontWeight: 800 }}>
+                                    Actions
+                                  </span>
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {filteredDailyApts.length === 0 ? (
+                                <tr>
+                                  <td colSpan={8} className="empty-table-cell">
+                                    <div className="looks-empty-state" style={{ padding: '36px 20px' }}>
+                                      <Scissors size={36} color="#CBD5E1" />
+                                      <h4 style={{ margin: '10px 0 4px', fontSize: '16px', color: '#0F172A' }}>
+                                        No daily services found
+                                      </h4>
+                                      <p style={{ margin: '0 0 16px', fontSize: '13px', color: '#64748B' }}>
+                                        {dailyServiceDateFilter
+                                          ? `No services logged for ${dailyServiceDateFilter}. Click below to add one.`
+                                          : 'Log daily salon services performed by your team.'}
+                                      </p>
+                                      <button
+                                        type="button"
+                                        className="btn-gold-action"
+                                        onClick={handleOpenAddDailyService}
+                                        style={{ fontSize: '12.5px', padding: '8px 18px' }}
+                                      >
+                                        <Plus size={14} /> Log Daily Service
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ) : (
+                                filteredDailyApts.map(apt => {
+                                  const staff = staffList.find(s => s.id === apt.staffId || s.name === apt.staffName || s.name === apt.stylistName);
+                                  const rate = staff?.commissionRate || 12;
+                                  const baseAmt = parseFloat(apt.finalAmount !== undefined ? apt.finalAmount : apt.amount) || 0;
+                                  const commissionAmt = Math.round(baseAmt * (rate / 100));
+                                  const isPaid = apt.paymentStatus === 'Paid';
+
+                                  return (
+                                    <tr key={apt.id}>
+                                      <td>
+                                        <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '13px' }}>{apt.date}</div>
+                                        <div style={{ fontSize: '11.5px', color: '#64748B' }}>{apt.time}</div>
+                                      </td>
+                                      <td>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                          <div style={{
+                                            width: '28px',
+                                            height: '28px',
+                                            borderRadius: '50%',
+                                            background: '#F3E8FF',
+                                            color: '#7C3AED',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            fontWeight: 700,
+                                            fontSize: '11px'
+                                          }}>
+                                            {(apt.staffName || apt.stylistName || 'S').slice(0, 1).toUpperCase()}
+                                          </div>
+                                          <div>
+                                            <strong style={{ color: '#0F172A', fontSize: '13px' }}>{apt.staffName || apt.stylistName || 'Staff Employee'}</strong>
+                                            {staff?.role && <div style={{ fontSize: '11px', color: '#64748B' }}>{staff.role}</div>}
+                                          </div>
+                                        </div>
+                                      </td>
+                                      <td>
+                                        <strong style={{ color: '#0F172A', fontSize: '13px' }}>{apt.customerName}</strong>
+                                        <div style={{ fontSize: '11.5px', color: '#64748B' }}>{apt.customerPhone || 'No Phone'}</div>
+                                      </td>
+                                      <td>
+                                        <span style={{ fontWeight: 600, color: '#1E293B', fontSize: '13px' }}>{apt.serviceName}</span>
+                                        {apt.notes && <div style={{ fontSize: '11px', color: '#94A3B8', fontStyle: 'italic' }}>Note: {apt.notes}</div>}
+                                      </td>
+                                      <td>
+                                        <strong style={{ color: '#10B981', fontSize: '14.5px' }}>₹{baseAmt.toLocaleString()}</strong>
+                                      </td>
+                                      <td>
+                                        <span style={{ fontWeight: 700, color: '#D97706', fontSize: '13px' }}>
+                                          ₹{commissionAmt.toLocaleString()}
+                                        </span>
+                                        <span style={{ fontSize: '10.5px', color: '#64748B', marginLeft: '4px' }}>({rate}%)</span>
+                                      </td>
+                                      <td>
+                                        <span style={{
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          gap: '4px',
+                                          padding: '3px 9px',
+                                          borderRadius: '12px',
+                                          fontSize: '11px',
+                                          fontWeight: 700,
+                                          background: isPaid ? '#DCFCE7' : '#FEF3C7',
+                                          color: isPaid ? '#15803D' : '#B45309'
+                                        }}>
+                                          {isPaid ? '✓ Paid' : '⏳ Billing Pending'}
+                                        </span>
+                                      </td>
+                                      <td>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                                          <button
+                                            type="button"
+                                            className="action-icon-btn"
+                                            onClick={() => handleOpenEditDailyService(apt)}
+                                            title="Update this Service Entry"
+                                            style={{
+                                              padding: '6px 8px',
+                                              borderRadius: '6px',
+                                              border: '1px solid #CBD5E1',
+                                              background: '#FFFFFF',
+                                              color: '#0F172A',
+                                              cursor: 'pointer',
+                                              display: 'inline-flex',
+                                              alignItems: 'center',
+                                              gap: '4px',
+                                              fontSize: '11px',
+                                              fontWeight: 600
+                                            }}
+                                          >
+                                            <Edit2 size={13} color="#0284C7" /> Update
+                                          </button>
+                                          {!isPaid && (
+                                            <button
+                                              type="button"
+                                              onClick={() => markAppointmentPaid(apt.id, 'Cash')}
+                                              title="Mark Paid"
+                                              style={{
+                                                padding: '6px 8px',
+                                                borderRadius: '6px',
+                                                border: '1px solid #86EFAC',
+                                                background: '#F0FDF4',
+                                                color: '#16A34A',
+                                                cursor: 'pointer',
+                                                fontSize: '11px',
+                                                fontWeight: 700
+                                              }}
+                                            >
+                                              ✓ Paid
+                                            </button>
+                                          )}
+                                          <button
+                                            type="button"
+                                            className="action-icon-btn delete-btn"
+                                            onClick={() => {
+                                              if (window.confirm(`Delete service entry #${apt.id} for ${apt.customerName}?`)) {
+                                                deleteAppointment(apt.id);
+                                              }
+                                            }}
+                                            title="Delete Entry"
+                                            style={{
+                                              padding: '6px 7px',
+                                              borderRadius: '6px',
+                                              border: '1px solid #FECACA',
+                                              background: '#FEF2F2',
+                                              color: '#DC2626',
+                                              cursor: 'pointer'
+                                            }}
+                                          >
+                                            <Trash2 size={13} />
+                                          </button>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  );
+                                })
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
                   {/* 2. Employee Services Assignment Matrix */}
                   {employeeSubTab === 'services' && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -3903,126 +4341,32 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                   </div>
                 )}
 
-                  {/* 3. Unified Incentive Tab (Incentive Rules & Commission Payouts) */}
+                  {/* 3. Unified Incentive Tab (Commission Payouts) */}
                   {employeeSubTab === 'incentive' && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                      {/* Top: Incentive Rules Card */}
-                      <div className="looks-incentive-rules-card">
-                        <div className="rules-header-strip">
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                            <button
-                              type="button"
-                              className="btn-icon-back"
-                              onClick={() => setEmployeeSubTab('list')}
-                              title="Back to All Employees"
-                              style={{
-                                width: '36px',
-                                height: '36px',
-                                borderRadius: '8px',
-                                background: '#FFFFFF',
-                                border: '1px solid #CBD5E1',
-                                color: '#0F172A',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                cursor: 'pointer',
-                                boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-                                transition: 'all 0.15s ease',
-                                flexShrink: 0
-                              }}
-                            >
-                              <ArrowLeft size={18} strokeWidth={2.4} />
-                            </button>
-                            <h4 className="rules-title" style={{ margin: 0 }}>Incentive Rules - {currentIncentiveStylist}</h4>
-                            <select
-                              className="looks-filter-select"
-                              value={selectedStylistForRule}
-                              onChange={(e) => setSelectedStylistForRule(e.target.value)}
-                            >
-                              <option value="all">All Stylists</option>
-                              {(data.staff || []).map(s => (
-                                <option key={s.id} value={s.name}>{s.name}</option>
-                              ))}
-                            </select>
-                          </div>
-                          <button className="btn-gold-action" onClick={() => setShowAddRuleModal(true)}>
-                            <Plus size={15} /> Add Rule
-                          </button>
-                        </div>
-
-                        <table className="looks-master-table">
-                          <thead>
-                            <tr>
-                              <th>
-                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#0D9488', fontWeight: 800 }}>
-                                  <Scissors size={13} strokeWidth={2.5} /> Service
-                                </span>
-                              </th>
-                              <th>
-                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#0284C7', fontWeight: 800 }}>
-                                  <Tag size={13} strokeWidth={2.5} /> Incentive Type
-                                </span>
-                              </th>
-                              <th>
-                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#D97706', fontWeight: 800 }}>
-                                  <Percent size={13} strokeWidth={2.5} /> Value
-                                </span>
-                              </th>
-                              <th>
-                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#475569', fontWeight: 800 }}>
-                                  <FileText size={13} strokeWidth={2.5} /> Condition
-                                </span>
-                              </th>
-                              <th>
-                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#16A34A', fontWeight: 800 }}>
-                                  <CheckCircle2 size={13} strokeWidth={2.5} /> Status
-                                </span>
-                              </th>
-                              <th style={{ textAlign: 'center' }}>
-                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#E11D48', fontWeight: 800 }}>
-                                  <Sparkles size={13} strokeWidth={2.5} /> Actions
-                                </span>
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {displayedRules.length === 0 ? (
-                              <tr>
-                                <td colSpan={6} className="empty-table-cell">
-                                  <div className="looks-empty-state">
-                                    <Sparkles size={32} />
-                                    <h4>No incentive rules configured</h4>
-                                    <p>Define percentage or fixed commission rewards per service for {currentIncentiveStylist}.</p>
-                                  </div>
-                                </td>
-                              </tr>
-                            ) : (
-                              displayedRules.map(r => (
-                                <tr key={r.id}>
-                                  <td><strong>{r.service}</strong></td>
-                                  <td>{r.incentiveType || r.type}</td>
-                                  <td><span className="incentive-pill">{r.value}</span></td>
-                                  <td>{r.condition}</td>
-                                  <td><span className="status-pill status-completed">{r.status || 'Active'}</span></td>
-                                  <td>
-                                    <div className="action-buttons-cell">
-                                      <button className="btn-table-action-danger" onClick={() => deleteIncentiveRule(r.id)} title="Delete">
-                                        <Trash2 size={14} />
-                                      </button>
-                                    </div>
-                                  </td>
-                                </tr>
-                              ))
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
-
-                      {/* Bottom: Incentive Records / Payouts */}
+                      {/* Employee Commission Payouts */}
                       <div className="looks-table-card">
-                        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                          <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>Employee Commission Payouts</h4>
-                          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Accrued from billed salon appointments &amp; services</span>
+                        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                          <div>
+                            <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)' }}>Employee Commission Payouts</h4>
+                            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Accrued from billed salon appointments &amp; services</span>
+                          </div>
+                          <button
+                            type="button"
+                            className="btn-gold-action"
+                            onClick={() => setShowAddRuleModal(true)}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              padding: '8px 16px',
+                              borderRadius: '8px',
+                              fontWeight: 700,
+                              fontSize: '13px'
+                            }}
+                          >
+                            <Plus size={15} strokeWidth={2.4} /> Add Rule
+                          </button>
                         </div>
                         <table className="looks-master-table">
                           <thead>
@@ -4278,6 +4622,7 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                     const convertedLeads = allL.filter(l => (l.status || '').toLowerCase() === 'converted' || l.stage === 'converted').length;
 
                     return (
+                      <>
                       <div style={{
                         display: 'grid',
                         gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
@@ -4285,16 +4630,30 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                         marginBottom: '20px'
                       }}>
                         {/* 1. TOTAL LEADS (Dark Navy Card) */}
-                        <div style={{
-                          background: '#111827',
-                          borderRadius: '12px',
-                          padding: '16px 20px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '14px',
-                          color: '#FFFFFF',
-                          boxShadow: '0 2px 8px rgba(17, 24, 39, 0.15)'
-                        }}>
+                        <div
+                          onClick={() => {
+                            setLeadKpiFilter('all');
+                            setLeadSearch('');
+                            setLeadStatusFilter('all');
+                            setLeadFollowUpFilter('all');
+                          }}
+                          title="Click to view all leads"
+                          style={{
+                            cursor: 'pointer',
+                            userSelect: 'none',
+                            background: '#111827',
+                            border: leadKpiFilter === 'all' ? '2px solid #818CF8' : '2px solid transparent',
+                            borderRadius: '12px',
+                            padding: '16px 20px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '14px',
+                            color: '#FFFFFF',
+                            boxShadow: leadKpiFilter === 'all' ? '0 4px 18px rgba(99, 102, 241, 0.45)' : '0 2px 8px rgba(17, 24, 39, 0.15)',
+                            transform: leadKpiFilter === 'all' ? 'translateY(-2px)' : 'none',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
                           <div style={{
                             width: '38px',
                             height: '38px',
@@ -4319,15 +4678,24 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                         </div>
 
                         {/* 2. NEW LEADS (Soft Sky Blue) */}
-                        <div style={{
-                          background: '#EFF6FF',
-                          border: '1px solid #BFDBFE',
-                          borderRadius: '12px',
-                          padding: '16px 20px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '14px'
-                        }}>
+                        <div
+                          onClick={() => setLeadKpiFilter(prev => prev === 'new' ? 'all' : 'new')}
+                          title="Click to filter New Leads"
+                          style={{
+                            cursor: 'pointer',
+                            userSelect: 'none',
+                            background: leadKpiFilter === 'new' ? '#DBEAFE' : '#EFF6FF',
+                            border: leadKpiFilter === 'new' ? '2px solid #0284C7' : '1px solid #BFDBFE',
+                            borderRadius: '12px',
+                            padding: '16px 20px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '14px',
+                            boxShadow: leadKpiFilter === 'new' ? '0 4px 14px rgba(2, 132, 199, 0.25)' : 'none',
+                            transform: leadKpiFilter === 'new' ? 'translateY(-2px)' : 'none',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
                           <div style={{
                             width: '38px',
                             height: '38px',
@@ -4352,15 +4720,24 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                         </div>
 
                         {/* 3. FOLLOW-UP TO... (Soft Amber) */}
-                        <div style={{
-                          background: '#FFFBEB',
-                          border: '1px solid #FDE68A',
-                          borderRadius: '12px',
-                          padding: '16px 20px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '14px'
-                        }}>
+                        <div
+                          onClick={() => setLeadKpiFilter(prev => prev === 'followup' ? 'all' : 'followup')}
+                          title="Click to filter Follow-Up Leads"
+                          style={{
+                            cursor: 'pointer',
+                            userSelect: 'none',
+                            background: leadKpiFilter === 'followup' ? '#FEF3C7' : '#FFFBEB',
+                            border: leadKpiFilter === 'followup' ? '2px solid #D97706' : '1px solid #FDE68A',
+                            borderRadius: '12px',
+                            padding: '16px 20px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '14px',
+                            boxShadow: leadKpiFilter === 'followup' ? '0 4px 14px rgba(217, 119, 6, 0.25)' : 'none',
+                            transform: leadKpiFilter === 'followup' ? 'translateY(-2px)' : 'none',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
                           <div style={{
                             width: '38px',
                             height: '38px',
@@ -4385,15 +4762,24 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                         </div>
 
                         {/* 4. INTERESTED (Soft Mint Green) */}
-                        <div style={{
-                          background: '#F0FDF4',
-                          border: '1px solid #BBF7D0',
-                          borderRadius: '12px',
-                          padding: '16px 20px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '14px'
-                        }}>
+                        <div
+                          onClick={() => setLeadKpiFilter(prev => prev === 'interested' ? 'all' : 'interested')}
+                          title="Click to filter Interested Leads"
+                          style={{
+                            cursor: 'pointer',
+                            userSelect: 'none',
+                            background: leadKpiFilter === 'interested' ? '#DCFCE7' : '#F0FDF4',
+                            border: leadKpiFilter === 'interested' ? '2px solid #16A34A' : '1px solid #BBF7D0',
+                            borderRadius: '12px',
+                            padding: '16px 20px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '14px',
+                            boxShadow: leadKpiFilter === 'interested' ? '0 4px 14px rgba(22, 163, 74, 0.25)' : 'none',
+                            transform: leadKpiFilter === 'interested' ? 'translateY(-2px)' : 'none',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
                           <div style={{
                             width: '38px',
                             height: '38px',
@@ -4418,15 +4804,24 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                         </div>
 
                         {/* 5. CONVERTED (Soft Cyan / Teal) */}
-                        <div style={{
-                          background: '#ECFEFF',
-                          border: '1px solid #99F6E4',
-                          borderRadius: '12px',
-                          padding: '16px 20px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '14px'
-                        }}>
+                        <div
+                          onClick={() => setLeadKpiFilter(prev => prev === 'converted' ? 'all' : 'converted')}
+                          title="Click to filter Converted Clients"
+                          style={{
+                            cursor: 'pointer',
+                            userSelect: 'none',
+                            background: leadKpiFilter === 'converted' ? '#CCFBF1' : '#ECFEFF',
+                            border: leadKpiFilter === 'converted' ? '2px solid #0D9488' : '1px solid #99F6E4',
+                            borderRadius: '12px',
+                            padding: '16px 20px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '14px',
+                            boxShadow: leadKpiFilter === 'converted' ? '0 4px 14px rgba(13, 148, 136, 0.25)' : 'none',
+                            transform: leadKpiFilter === 'converted' ? 'translateY(-2px)' : 'none',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
                           <div style={{
                             width: '38px',
                             height: '38px',
@@ -4450,6 +4845,49 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                           </div>
                         </div>
                       </div>
+
+                      {/* Active Lead KPI Card Filter Banner */}
+                      {leadKpiFilter !== 'all' && (
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '10px 16px',
+                          marginBottom: '16px',
+                          background: '#EEF2FF',
+                          border: '1px solid #C7D2FE',
+                          borderRadius: '12px',
+                          fontSize: '13px',
+                          color: '#3730A3',
+                          fontWeight: 600
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ background: '#4F46E5', color: '#fff', fontSize: '10.5px', fontWeight: 800, padding: '2px 8px', borderRadius: '10px', textTransform: 'uppercase' }}>
+                              Card Filter Active
+                            </span>
+                            <span>
+                              Showing: <strong>{leadKpiFilter === 'new' ? 'New Leads' : leadKpiFilter === 'followup' ? 'Follow-Up Scheduled / Due Today' : leadKpiFilter === 'interested' ? 'Interested Leads' : 'Converted Clients'}</strong>
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setLeadKpiFilter('all')}
+                            style={{
+                              background: '#FFFFFF',
+                              border: '1px solid #CBD5E1',
+                              color: '#4338CA',
+                              fontWeight: 700,
+                              padding: '4px 10px',
+                              borderRadius: '8px',
+                              cursor: 'pointer',
+                              fontSize: '12px'
+                            }}
+                          >
+                            ✕ Show All Leads
+                          </button>
+                        </div>
+                      )}
+                    </>
                     );
                   })()}
 
@@ -4730,6 +5168,7 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                               type="button"
                               onClick={() => {
                                 setLeadSearch('');
+                                setLeadKpiFilter('all');
                                 setLeadStatusFilter('all');
                                 setLeadSubStatusFilter('all');
                                 setLeadSourceFilter('all');
@@ -4806,8 +5245,20 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                               {(() => {
                                 const allLeads = data.leads || [];
 
-                                // Apply all 7 filters
+                                // Apply all 7 filters + KPI Card Filter
                                 const filtered = allLeads
+                                  .filter(l => {
+                                    if (leadKpiFilter === 'all') return true;
+                                    const s = (l.status || '').toLowerCase();
+                                    const stg = (l.stage || '').toLowerCase();
+                                    const f = (l.nextFollowUp || '').toLowerCase();
+                                    const todayStr = new Date().toISOString().split('T')[0];
+                                    if (leadKpiFilter === 'new') return s === 'new' || stg === 'lead_generated';
+                                    if (leadKpiFilter === 'followup') return f.includes(todayStr) || f.includes('today') || s.includes('follow');
+                                    if (leadKpiFilter === 'interested') return s === 'interested' || stg === 'interested';
+                                    if (leadKpiFilter === 'converted') return s === 'converted' || stg === 'converted';
+                                    return true;
+                                  })
                                   .filter(l => {
                                     if (leadSubStatusFilter === 'all') return true;
                                     const s = (l.status || '').toLowerCase();
@@ -5830,7 +6281,17 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                     (pkg.badge && pkg.badge.toLowerCase().includes(q)) ||
                     (pkg.includes && pkg.includes.some(inc => inc && inc.toLowerCase().includes(q)));
 
-                  return matchCat && matchSearch;
+                  // KPI card filter condition
+                  let matchKpi = true;
+                  if (packageKpiFilter === 'savings') {
+                    matchKpi = pkg.originalPrice && pkg.originalPrice > pkg.price;
+                  } else if (packageKpiFilter === 'high_value') {
+                    matchKpi = (parseFloat(pkg.price) || 0) >= avgPrice;
+                  } else if (packageKpiFilter === 'bridal') {
+                    matchKpi = (pkg.category || '').toLowerCase().includes('bridal') || (pkg.name || '').toLowerCase().includes('bridal');
+                  }
+
+                  return matchCat && matchSearch && matchKpi;
                 });
 
                 // Stats calculations
@@ -5880,9 +6341,26 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                       </div>
                     </div>
 
-                    {/* Stats Ribbon */}
+                    {/* Stats Ribbon (Clickable Interactive Cards) */}
                     <div className="packages-stats-ribbon">
-                      <div className="pkg-stat-card">
+                      {/* 1. Total Bundles Card */}
+                      <div
+                        className="pkg-stat-card"
+                        onClick={() => {
+                          setPackageKpiFilter('all');
+                          setPackageCategoryFilter('all');
+                          setPackageSearch('');
+                        }}
+                        title="Click to view all salon packages & bundles"
+                        style={{
+                          cursor: 'pointer',
+                          userSelect: 'none',
+                          border: (packageKpiFilter === 'all' && packageCategoryFilter === 'all') ? '2px solid #7C3AED' : '1px solid #E2E8F0',
+                          background: (packageKpiFilter === 'all' && packageCategoryFilter === 'all') ? '#F5F3FF' : '#FFFFFF',
+                          boxShadow: (packageKpiFilter === 'all' && packageCategoryFilter === 'all') ? '0 4px 14px rgba(124, 58, 237, 0.16)' : undefined,
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
                         <div className="pkg-stat-icon" style={{ background: 'rgba(124, 58, 237, 0.12)', color: '#7C3AED' }}>
                           <Gift size={22} strokeWidth={2.3} />
                         </div>
@@ -5892,7 +6370,22 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                         </div>
                       </div>
 
-                      <div className="pkg-stat-card">
+                      {/* 2. Max Client Savings Card */}
+                      <div
+                        className="pkg-stat-card"
+                        onClick={() => {
+                          setPackageKpiFilter(prev => prev === 'savings' ? 'all' : 'savings');
+                        }}
+                        title="Click to filter packages with client discounts & savings"
+                        style={{
+                          cursor: 'pointer',
+                          userSelect: 'none',
+                          border: packageKpiFilter === 'savings' ? '2px solid #059669' : '1px solid #E2E8F0',
+                          background: packageKpiFilter === 'savings' ? '#ECFDF5' : '#FFFFFF',
+                          boxShadow: packageKpiFilter === 'savings' ? '0 4px 14px rgba(5, 150, 105, 0.16)' : undefined,
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
                         <div className="pkg-stat-icon" style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#059669' }}>
                           <Percent size={22} strokeWidth={2.3} />
                         </div>
@@ -5902,7 +6395,22 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                         </div>
                       </div>
 
-                      <div className="pkg-stat-card">
+                      {/* 3. Avg Bundle Value Card */}
+                      <div
+                        className="pkg-stat-card"
+                        onClick={() => {
+                          setPackageKpiFilter(prev => prev === 'high_value' ? 'all' : 'high_value');
+                        }}
+                        title={`Click to filter premium bundles (₹${avgPrice.toLocaleString()}+)`}
+                        style={{
+                          cursor: 'pointer',
+                          userSelect: 'none',
+                          border: packageKpiFilter === 'high_value' ? '2px solid #D97706' : '1px solid #E2E8F0',
+                          background: packageKpiFilter === 'high_value' ? '#FFFBEB' : '#FFFFFF',
+                          boxShadow: packageKpiFilter === 'high_value' ? '0 4px 14px rgba(217, 119, 6, 0.16)' : undefined,
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
                         <div className="pkg-stat-icon" style={{ background: 'rgba(217, 119, 6, 0.12)', color: '#D97706' }}>
                           <IndianRupee size={22} strokeWidth={2.3} />
                         </div>
@@ -5912,7 +6420,28 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                         </div>
                       </div>
 
-                      <div className="pkg-stat-card">
+                      {/* 4. Bridal Suites Card */}
+                      <div
+                        className="pkg-stat-card"
+                        onClick={() => {
+                          if (packageKpiFilter === 'bridal') {
+                            setPackageKpiFilter('all');
+                            setPackageCategoryFilter('all');
+                          } else {
+                            setPackageKpiFilter('bridal');
+                            setPackageCategoryFilter('bridal');
+                          }
+                        }}
+                        title="Click to filter Bridal & Wedding packages"
+                        style={{
+                          cursor: 'pointer',
+                          userSelect: 'none',
+                          border: (packageKpiFilter === 'bridal' || packageCategoryFilter === 'bridal') ? '2px solid #DB2777' : '1px solid #E2E8F0',
+                          background: (packageKpiFilter === 'bridal' || packageCategoryFilter === 'bridal') ? '#FDF2F8' : '#FFFFFF',
+                          boxShadow: (packageKpiFilter === 'bridal' || packageCategoryFilter === 'bridal') ? '0 4px 14px rgba(219, 39, 119, 0.16)' : undefined,
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
                         <div className="pkg-stat-icon" style={{ background: 'rgba(236, 72, 153, 0.12)', color: '#DB2777' }}>
                           <Award size={22} strokeWidth={2.3} />
                         </div>
@@ -5970,6 +6499,47 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                       </div>
                     </div>
 
+                    {/* Active KPI Card Filter Indicator */}
+                    {packageKpiFilter !== 'all' && (
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '10px 16px',
+                        marginBottom: '16px',
+                        background: '#EEF2FF',
+                        border: '1px solid #C7D2FE',
+                        borderRadius: '12px',
+                        fontSize: '13px',
+                        color: '#3730A3'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ background: '#4F46E5', color: '#fff', fontSize: '10.5px', fontWeight: 800, padding: '2px 8px', borderRadius: '10px', textTransform: 'uppercase' }}>
+                            Card Filter Active
+                          </span>
+                          <span>
+                            Showing: <strong>{packageKpiFilter === 'savings' ? 'Max Client Savings (Discounted Bundles)' : packageKpiFilter === 'high_value' ? `High Value Bundles (₹${avgPrice.toLocaleString()}+)` : 'Bridal & Wedding Specials'}</strong> ({filtered.length} found)
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setPackageKpiFilter('all')}
+                          style={{
+                            background: '#FFFFFF',
+                            border: '1px solid #CBD5E1',
+                            color: '#4338CA',
+                            fontWeight: 700,
+                            padding: '4px 10px',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            fontSize: '12px'
+                          }}
+                        >
+                          ✕ Show All Bundles
+                        </button>
+                      </div>
+                    )}
+
                     {/* Packages Card Grid */}
                     {filtered.length === 0 ? (
                       <div className="looks-empty-state" style={{ margin: '30px auto', maxWidth: 480, textAlign: 'center' }}>
@@ -5979,7 +6549,7 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                         <button
                           className="btn-gold-action"
                           style={{ marginTop: '12px' }}
-                          onClick={() => { setPackageSearch(''); setPackageCategoryFilter('all'); }}
+                          onClick={() => { setPackageSearch(''); setPackageCategoryFilter('all'); setPackageKpiFilter('all'); }}
                         >
                           Clear Filters
                         </button>
@@ -12582,6 +13152,257 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
           </div>
         </div>
       )}
+
+      {/* Modal: Add or Update Daily Service */}
+      {showDailyServiceModal && (
+        <div className="looks-modal-backdrop" onClick={() => setShowDailyServiceModal(false)}>
+          <div
+            className="looks-modal-window"
+            style={{
+              maxWidth: '620px',
+              width: '92%',
+              margin: 'auto',
+              padding: 0,
+              borderRadius: '16px',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              maxHeight: '90vh',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="modal-top" style={{ padding: '18px 24px', background: '#FFFFFF', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #E5E7EB' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#D97706' }}>
+                  <Scissors size={20} strokeWidth={2.2} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '18px', color: '#0F172A', fontWeight: 800 }}>
+                    {editingDailyServiceId ? 'Update Daily Service' : 'Log New Daily Service'}
+                  </h3>
+                  <p style={{ margin: '2px 0 0', fontSize: '12.5px', color: '#64748B' }}>
+                    Record or edit services completed by salon stylists today.
+                  </p>
+                </div>
+              </div>
+              <button className="btn-close-x" onClick={() => setShowDailyServiceModal(false)} style={{ color: '#64748B', fontSize: '22px', background: 'none', border: 'none', cursor: 'pointer', lineHeight: 1 }}>×</button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSaveDailyService} style={{ padding: '22px 24px', overflowY: 'auto' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                {/* Employee / Stylist */}
+                <div>
+                  <label className="form-label" style={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A', marginBottom: '6px', display: 'block' }}>
+                    Stylist / Employee *
+                  </label>
+                  <select
+                    className="form-control"
+                    required
+                    value={dailyServiceForm.staffId}
+                    onChange={(e) => {
+                      const st = (data.staff || []).find(s => s.id === e.target.value);
+                      setDailyServiceForm(prev => ({
+                        ...prev,
+                        staffId: e.target.value,
+                        staffName: st ? st.name : prev.staffName
+                      }));
+                    }}
+                    style={{ height: '42px', fontSize: '13px', borderRadius: '8px' }}
+                  >
+                    <option value="">Select Employee</option>
+                    {(data.staff || []).map(s => (
+                      <option key={s.id} value={s.id}>{s.name} ({s.role || 'Stylist'})</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Service Selection */}
+                <div>
+                  <label className="form-label" style={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A', marginBottom: '6px', display: 'block' }}>
+                    Service Provided *
+                  </label>
+                  <select
+                    className="form-control"
+                    required
+                    value={dailyServiceForm.serviceId}
+                    onChange={(e) => {
+                      const srv = (data.services || []).find(s => s.id === e.target.value);
+                      setDailyServiceForm(prev => ({
+                        ...prev,
+                        serviceId: e.target.value,
+                        serviceName: srv ? srv.name : prev.serviceName,
+                        amount: srv ? srv.price : prev.amount
+                      }));
+                    }}
+                    style={{ height: '42px', fontSize: '13px', borderRadius: '8px' }}
+                  >
+                    <option value="">Select Service</option>
+                    {(data.services || []).map(s => (
+                      <option key={s.id} value={s.id}>{s.name} - ₹{s.price}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                {/* Customer Name */}
+                <div>
+                  <label className="form-label" style={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A', marginBottom: '6px', display: 'block' }}>
+                    Customer Name *
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    required
+                    placeholder="e.g. Rahul Sharma"
+                    value={dailyServiceForm.customerName}
+                    onChange={(e) => setDailyServiceForm(prev => ({ ...prev, customerName: e.target.value }))}
+                    style={{ height: '42px', fontSize: '13px', borderRadius: '8px' }}
+                  />
+                </div>
+
+                {/* Customer Phone */}
+                <div>
+                  <label className="form-label" style={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A', marginBottom: '6px', display: 'block' }}>
+                    Customer Mobile No.
+                  </label>
+                  <input
+                    type="tel"
+                    className="form-control"
+                    placeholder="e.g. 9876543210"
+                    value={dailyServiceForm.customerPhone}
+                    onChange={(e) => setDailyServiceForm(prev => ({ ...prev, customerPhone: e.target.value }))}
+                    style={{ height: '42px', fontSize: '13px', borderRadius: '8px' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                {/* Amount */}
+                <div>
+                  <label className="form-label" style={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A', marginBottom: '6px', display: 'block' }}>
+                    Amount (₹) *
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    required
+                    className="form-control"
+                    placeholder="₹ Amount"
+                    value={dailyServiceForm.amount}
+                    onChange={(e) => setDailyServiceForm(prev => ({ ...prev, amount: e.target.value }))}
+                    style={{ height: '42px', fontSize: '13px', borderRadius: '8px' }}
+                  />
+                </div>
+
+                {/* Date */}
+                <div>
+                  <label className="form-label" style={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A', marginBottom: '6px', display: 'block' }}>
+                    Date *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    className="form-control"
+                    value={dailyServiceForm.date}
+                    onChange={(e) => setDailyServiceForm(prev => ({ ...prev, date: e.target.value }))}
+                    style={{ height: '42px', fontSize: '13px', borderRadius: '8px' }}
+                  />
+                </div>
+
+                {/* Time */}
+                <div>
+                  <label className="form-label" style={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A', marginBottom: '6px', display: 'block' }}>
+                    Time
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="e.g. 02:30 PM"
+                    value={dailyServiceForm.time}
+                    onChange={(e) => setDailyServiceForm(prev => ({ ...prev, time: e.target.value }))}
+                    style={{ height: '42px', fontSize: '13px', borderRadius: '8px' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                {/* Payment Status */}
+                <div>
+                  <label className="form-label" style={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A', marginBottom: '6px', display: 'block' }}>
+                    Billing / Payment Status
+                  </label>
+                  <select
+                    className="form-control"
+                    value={dailyServiceForm.paymentStatus}
+                    onChange={(e) => setDailyServiceForm(prev => ({ ...prev, paymentStatus: e.target.value }))}
+                    style={{ height: '42px', fontSize: '13px', borderRadius: '8px' }}
+                  >
+                    <option value="Paid">Paid / Collected</option>
+                    <option value="Pending">Pending Billing</option>
+                  </select>
+                </div>
+
+                {/* Payment Method */}
+                <div>
+                  <label className="form-label" style={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A', marginBottom: '6px', display: 'block' }}>
+                    Payment Mode
+                  </label>
+                  <select
+                    className="form-control"
+                    value={dailyServiceForm.paymentMethod}
+                    onChange={(e) => setDailyServiceForm(prev => ({ ...prev, paymentMethod: e.target.value }))}
+                    style={{ height: '42px', fontSize: '13px', borderRadius: '8px' }}
+                  >
+                    <option value="Cash">Cash</option>
+                    <option value="UPI">UPI / GPay / PhonePe</option>
+                    <option value="Card">Debit / Credit Card</option>
+                    <option value="Pay at Salon">Pay at Salon</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div style={{ marginBottom: '20px' }}>
+                <label className="form-label" style={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A', marginBottom: '6px', display: 'block' }}>
+                  Notes / Stylist Remarks (Optional)
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="e.g. Requested low ammonia dye, very satisfied"
+                  value={dailyServiceForm.notes}
+                  onChange={(e) => setDailyServiceForm(prev => ({ ...prev, notes: e.target.value }))}
+                  style={{ height: '42px', fontSize: '13px', borderRadius: '8px' }}
+                />
+              </div>
+
+              {/* Actions */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <button
+                  type="button"
+                  className="btn-outline-gold"
+                  onClick={() => setShowDailyServiceModal(false)}
+                  style={{ padding: '9px 18px', borderRadius: '8px', fontSize: '13px' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-gold-action"
+                  style={{ padding: '9px 22px', borderRadius: '8px', fontSize: '13px', fontWeight: 700 }}
+                >
+                  {editingDailyServiceId ? '✓ Update Service' : '✓ Save Daily Service'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Mobile Bottom Quick Navigation */}
       <nav className="looks-mobile-bottom-bar" aria-label="Mobile Navigation">
         <button 

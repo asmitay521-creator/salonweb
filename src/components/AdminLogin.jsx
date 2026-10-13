@@ -20,8 +20,8 @@ export default function AdminLogin({ onLoginSuccess, onReturnHome }) {
   const [activeTab, setActiveTab] = useState('admin');
   
   // Form credentials
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('admin123');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
@@ -32,13 +32,8 @@ export default function AdminLogin({ onLoginSuccess, onReturnHome }) {
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     setErrorMsg('');
-    if (tab === 'admin') {
-      setUsername('admin');
-      setPassword('admin123');
-    } else {
-      setUsername('employee');
-      setPassword('employee123');
-    }
+    setUsername('');
+    setPassword('');
   };
 
   const handleSubmit = async (e) => {
@@ -182,7 +177,7 @@ export default function AdminLogin({ onLoginSuccess, onReturnHome }) {
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder={activeTab === 'admin' ? 'admin' : 'Enter email or username'}
+                placeholder={activeTab === 'admin' ? 'Enter admin username or email' : 'Enter employee username or email'}
                 autoComplete="username"
               />
             </div>
@@ -201,7 +196,7 @@ export default function AdminLogin({ onLoginSuccess, onReturnHome }) {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder="Enter password"
                 autoComplete="current-password"
               />
               <button
