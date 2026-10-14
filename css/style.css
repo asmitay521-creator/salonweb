@@ -16210,3 +16210,97 @@ select.looks-input {
   color: white; 
   border-color: #8B5CF6;
 }
+
+/* Clickable Inventory Summary Cards */
+.inventory-stat-card {
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border-radius: 12px;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  text-align: left;
+  user-select: none;
+}
+
+.inventory-stat-card:hover {
+  transform: translateY(-2.5px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  border-color: #CBD5E1;
+}
+
+.inventory-stat-card:active {
+  transform: translateY(-0.5px);
+}
+
+.inventory-stat-card.active-total {
+  border: 2px solid #0D9488 !important;
+  box-shadow: 0 4px 14px rgba(13, 148, 136, 0.18) !important;
+  background: linear-gradient(180deg, #FFFFFF 0%, rgba(13, 148, 136, 0.04) 100%) !important;
+}
+
+.inventory-stat-card.active-stock {
+  border: 2px solid #10B981 !important;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.18) !important;
+  background: linear-gradient(180deg, #FFFFFF 0%, rgba(16, 185, 129, 0.04) 100%) !important;
+}
+
+.inventory-stat-card.active-valuation {
+  border: 2px solid #3B82F6 !important;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.18) !important;
+  background: linear-gradient(180deg, #FFFFFF 0%, rgba(59, 130, 246, 0.04) 100%) !important;
+}
+
+.inventory-stat-card.active-low {
+  border: 2px solid #EF4444 !important;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.18) !important;
+  background: linear-gradient(180deg, #FFFFFF 0%, rgba(239, 68, 68, 0.04) 100%) !important;
+}
+
+/* Clickable Report Summary Cards */
+.report-stat-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 20px 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  position: relative;
+  text-align: left;
+}
+
+.report-stat-card:hover {
+  transform: translateY(-2.5px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  border-color: #CBD5E1;
+}
+
+.report-stat-card:active {
+  transform: translateY(-0.5px);
+}
+
+.report-stat-card.active-revenue {
+  border: 2px solid #16A34A !important;
+  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.18) !important;
+  background: linear-gradient(180deg, #FFFFFF 0%, rgba(22, 163, 74, 0.04) 100%) !important;
+}
+
+.report-stat-card.active-discount {
+  border: 2px solid #D97706 !important;
+  box-shadow: 0 4px 14px rgba(217, 119, 6, 0.18) !important;
+  background: linear-gradient(180deg, #FFFFFF 0%, rgba(217, 119, 6, 0.04) 100%) !important;
+}
+
+.report-stat-card.active-tax {
+  border: 2px solid #3B82F6 !important;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.18) !important;
+  background: linear-gradient(180deg, #FFFFFF 0%, rgba(59, 130, 246, 0.04) 100%) !important;
+}
+

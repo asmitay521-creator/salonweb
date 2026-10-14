@@ -38,6 +38,7 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
   const [inventorySubTab, setInventorySubTab] = useState('current_stock'); // 'current_stock' | 'stock_in' | 'stock_out' | 'low_stock' | 'suppliers' | 'product_usage'
   const [employeeSubTab, setEmployeeSubTab] = useState('list'); // 'list' | 'services' | 'incentive_rules' | 'incentive_records' | 'performance'
   const [reportsSubTab, setReportsSubTab] = useState('revenue'); // 'revenue' | 'employee' | 'incentive' | 'inventory' | 'leads'
+  const [revenueReportCardView, setRevenueReportCardView] = useState('gross'); // 'gross' | 'discounts' | 'tax'
   const [showPdfPreviewModal, setShowPdfPreviewModal] = useState(false);
   const [pdfPreviewTab, setPdfPreviewTab] = useState('revenue');
 
@@ -127,6 +128,7 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
   const [inventoryCategoryFilter, setInventoryCategoryFilter] = useState('all');
   const [inventoryStatusFilter, setInventoryStatusFilter] = useState('all');
   const [inventorySearch, setInventorySearch] = useState('');
+  const [inventorySortBy, setInventorySortBy] = useState('default'); // 'default' | 'valuation_desc'
 
   // Employee filters & Selected Employee for Incentive Rules view
   const [employeeRoleFilter, setEmployeeRoleFilter] = useState('all');
@@ -2876,48 +2878,112 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                     </div>
                   </div>
 
-                  {/* Top Inventory Stock Summary Cards */}
+                  {/* Top Inventory Stock Summary Cards (Clickable Tabs) */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '14px', marginBottom: '16px' }}>
-                    <div className="looks-card-glass" style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: '14px', borderRadius: '12px', background: '#FFFFFF', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                    
+                    {/* Card 1: Total Products */}
+                    <div
+                      className={`looks-card-glass inventory-stat-card ${inventorySubTab === 'current_stock' && inventoryStatusFilter === 'all' && inventorySortBy === 'default' ? 'active-total' : ''}`}
+                      onClick={() => {
+                        setInventorySubTab('current_stock');
+                        setInventoryStatusFilter('all');
+                        setInventorySortBy('default');
+                        setInventorySearch('');
+                        setInventoryCategoryFilter('all');
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      title="Click to view all products"
+                    >
                       <div style={{ width: '42px', height: '42px', borderRadius: '10px', background: 'rgba(13, 148, 136, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0D9488' }}>
                         <Package size={22} />
                       </div>
-                      <div>
-                        <span style={{ fontSize: '12px', color: '#64748B', fontWeight: 600 }}>Total Products</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
+                          <span style={{ fontSize: '12px', color: '#64748B', fontWeight: 600 }}>Total Products</span>
+                          {inventorySubTab === 'current_stock' && inventoryStatusFilter === 'all' && inventorySortBy === 'default' && (
+                            <span style={{ fontSize: '10px', background: 'rgba(13, 148, 136, 0.12)', color: '#0D9488', padding: '1px 7px', borderRadius: '10px', fontWeight: 700 }}>Active</span>
+                          )}
+                        </div>
                         <h4 style={{ margin: '2px 0 0 0', fontSize: '18px', fontWeight: 700, color: '#0F172A' }}>{(data.inventory || []).length} Items</h4>
                       </div>
                     </div>
 
-                    <div className="looks-card-glass" style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: '14px', borderRadius: '12px', background: '#FFFFFF', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                    {/* Card 2: Total Stock in Hand */}
+                    <div
+                      className={`looks-card-glass inventory-stat-card ${inventorySubTab === 'current_stock' && inventoryStatusFilter === 'in_hand' ? 'active-stock' : ''}`}
+                      onClick={() => {
+                        setInventorySubTab('current_stock');
+                        setInventoryStatusFilter(prev => prev === 'in_hand' ? 'all' : 'in_hand');
+                        setInventorySortBy('default');
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      title="Click to filter products with available stock in hand"
+                    >
                       <div style={{ width: '42px', height: '42px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10B981' }}>
                         <Layers size={22} />
                       </div>
-                      <div>
-                        <span style={{ fontSize: '12px', color: '#64748B', fontWeight: 600 }}>Total Stock in Hand</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
+                          <span style={{ fontSize: '12px', color: '#64748B', fontWeight: 600 }}>Total Stock in Hand</span>
+                          {inventorySubTab === 'current_stock' && inventoryStatusFilter === 'in_hand' && (
+                            <span style={{ fontSize: '10px', background: 'rgba(16, 185, 129, 0.15)', color: '#10B981', padding: '1px 7px', borderRadius: '10px', fontWeight: 700 }}>Filtered</span>
+                          )}
+                        </div>
                         <h4 style={{ margin: '2px 0 0 0', fontSize: '18px', fontWeight: 700, color: '#0F172A' }}>
                           {(data.inventory || []).reduce((sum, p) => sum + (parseInt(p.stock) || 0), 0)} Units
                         </h4>
                       </div>
                     </div>
 
-                    <div className="looks-card-glass" style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: '14px', borderRadius: '12px', background: '#FFFFFF', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                    {/* Card 3: Stock Valuation (Cost Value) */}
+                    <div
+                      className={`looks-card-glass inventory-stat-card ${inventorySubTab === 'current_stock' && inventorySortBy === 'valuation_desc' ? 'active-valuation' : ''}`}
+                      onClick={() => {
+                        setInventorySubTab('current_stock');
+                        setInventorySortBy(prev => prev === 'valuation_desc' ? 'default' : 'valuation_desc');
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      title="Click to sort products by highest stock valuation"
+                    >
                       <div style={{ width: '42px', height: '42px', borderRadius: '10px', background: 'rgba(59, 130, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3B82F6' }}>
                         <DollarSign size={22} />
                       </div>
-                      <div>
-                        <span style={{ fontSize: '12px', color: '#64748B', fontWeight: 600 }}>Stock Valuation (Cost Value)</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
+                          <span style={{ fontSize: '12px', color: '#64748B', fontWeight: 600 }}>Stock Valuation (Cost Value)</span>
+                          {inventorySubTab === 'current_stock' && inventorySortBy === 'valuation_desc' && (
+                            <span style={{ fontSize: '10px', background: 'rgba(59, 130, 246, 0.15)', color: '#2563EB', padding: '1px 7px', borderRadius: '10px', fontWeight: 700 }}>Sorted ↓</span>
+                          )}
+                        </div>
                         <h4 style={{ margin: '2px 0 0 0', fontSize: '18px', fontWeight: 700, color: '#0F172A' }}>
                           ₹{(data.inventory || []).reduce((sum, p) => sum + ((parseInt(p.stock) || 0) * (parseFloat(p.unitCost) || 0)), 0).toLocaleString()}
                         </h4>
                       </div>
                     </div>
 
-                    <div className="looks-card-glass" style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: '14px', borderRadius: '12px', background: '#FFFFFF', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                    {/* Card 4: Low Stock Alerts */}
+                    <div
+                      className={`looks-card-glass inventory-stat-card ${inventorySubTab === 'low_stock' ? 'active-low' : ''}`}
+                      onClick={() => {
+                        setInventorySubTab(prev => prev === 'low_stock' ? 'current_stock' : 'low_stock');
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      title="Click to view low stock items and place reorders"
+                    >
                       <div style={{ width: '42px', height: '42px', borderRadius: '10px', background: lowStockProducts.length > 0 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: lowStockProducts.length > 0 ? '#EF4444' : '#10B981' }}>
                         <AlertTriangle size={22} />
                       </div>
-                      <div>
-                        <span style={{ fontSize: '12px', color: '#64748B', fontWeight: 600 }}>Low Stock Alerts</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
+                          <span style={{ fontSize: '12px', color: '#64748B', fontWeight: 600 }}>Low Stock Alerts</span>
+                          {inventorySubTab === 'low_stock' && (
+                            <span style={{ fontSize: '10px', background: 'rgba(239, 68, 68, 0.15)', color: '#EF4444', padding: '1px 7px', borderRadius: '10px', fontWeight: 700 }}>Active</span>
+                          )}
+                        </div>
                         <h4 style={{ margin: '2px 0 0 0', fontSize: '18px', fontWeight: 700, color: lowStockProducts.length > 0 ? '#EF4444' : '#10B981' }}>
                           {lowStockProducts.length} Items Low
                         </h4>
@@ -2981,10 +3047,36 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                             onChange={(e) => setInventoryStatusFilter(e.target.value)}
                           >
                             <option value="all">All Stock Status</option>
-                            <option value="in_stock">In Stock (&gt; Min Alert)</option>
+                            <option value="in_hand">In-Hand Stock (&gt; 0 Units)</option>
+                            <option value="in_stock">Healthy Stock (&gt; Min Alert)</option>
                             <option value="low_stock">Low Stock (≤ Min Alert)</option>
                             <option value="out_of_stock">Out of Stock (0 Units)</option>
                           </select>
+
+                          {inventorySortBy === 'valuation_desc' && (
+                            <button
+                              type="button"
+                              onClick={() => setInventorySortBy('default')}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '5px',
+                                background: '#EFF6FF',
+                                color: '#2563EB',
+                                border: '1px solid #BFDBFE',
+                                borderRadius: '20px',
+                                padding: '5px 12px',
+                                fontSize: '11.5px',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease'
+                              }}
+                              title="Clear sort and restore default view"
+                            >
+                              <span>Sorted: Valuation High to Low</span>
+                              <X size={13} />
+                            </button>
+                          )}
                         </div>
                       </div>
 
@@ -3058,6 +3150,7 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                                   const stk = parseInt(p.stock) || 0;
                                   const minAl = parseInt(p.minStockAlert) || 5;
                                   if (inventoryStatusFilter === 'all') return true;
+                                  if (inventoryStatusFilter === 'in_hand') return stk > 0;
                                   if (inventoryStatusFilter === 'out_of_stock') return stk <= 0;
                                   if (inventoryStatusFilter === 'low_stock') return stk > 0 && stk <= minAl;
                                   if (inventoryStatusFilter === 'in_stock') return stk > minAl;
@@ -3068,7 +3161,15 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                                   (p.sku && p.sku.toLowerCase().includes(inventorySearch.toLowerCase())) ||
                                   (p.brand && p.brand.toLowerCase().includes(inventorySearch.toLowerCase())) ||
                                   (p.supplier && p.supplier.toLowerCase().includes(inventorySearch.toLowerCase()))
-                                );
+                                )
+                                .sort((a, b) => {
+                                  if (inventorySortBy === 'valuation_desc') {
+                                    const valA = (parseInt(a.stock) || 0) * (parseFloat(a.unitCost) || 0);
+                                    const valB = (parseInt(b.stock) || 0) * (parseFloat(b.unitCost) || 0);
+                                    return valB - valA;
+                                  }
+                                  return 0;
+                                });
 
                               if (items.length === 0) {
                                 return (
@@ -7840,6 +7941,7 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                   {reportsSubTab === 'revenue' && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
                       {/* 3 KPI Cards Row (Matching Screenshot) */}
+                      {/* 3 KPI Cards Row (Clickable Tabs) */}
                       <div style={{
                         display: 'grid',
                         gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
@@ -7847,128 +7949,411 @@ export default function AdminPanel({ onReturnHome, onGoEmployee, onViewInvoice }
                         maxWidth: '850px'
                       }}>
                         {/* 1. Gross Revenue Realized */}
-                        <div style={{
-                          background: '#FFFFFF',
-                          border: '1px solid #E2E8F0',
-                          borderRadius: '12px',
-                          padding: '20px 24px',
-                          boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
-                        }}>
-                          <div style={{ fontSize: '12px', fontWeight: 600, color: '#64748B', marginBottom: '8px' }}>
-                            Gross Revenue Realized
+                        <div
+                          className={`report-stat-card ${revenueReportCardView === 'gross' ? 'active-revenue' : ''}`}
+                          onClick={() => setRevenueReportCardView('gross')}
+                          role="button"
+                          tabIndex={0}
+                          title="Click to view daily gross revenue breakdown"
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                            <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748B' }}>Gross Revenue Realized</span>
+                            {revenueReportCardView === 'gross' && (
+                              <span style={{ fontSize: '10px', background: 'rgba(22, 163, 74, 0.12)', color: '#16A34A', padding: '1px 7px', borderRadius: '10px', fontWeight: 700 }}>Selected</span>
+                            )}
                           </div>
                           <div style={{ fontSize: '28px', fontWeight: 800, color: '#0F172A', lineHeight: 1.2, marginBottom: '8px' }}>
                             ₹{totalGrossRevenue.toLocaleString('en-IN')}
                           </div>
-                          <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#16A34A' }}>
-                            100% live tracking
+                          <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#16A34A', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <CheckCircle2 size={13} /> 100% live tracking
                           </div>
                         </div>
 
                         {/* 2. Total Discounts Given */}
-                        <div style={{
-                          background: '#FFFFFF',
-                          border: '1px solid #E2E8F0',
-                          borderRadius: '12px',
-                          padding: '20px 24px',
-                          boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
-                        }}>
-                          <div style={{ fontSize: '12px', fontWeight: 600, color: '#64748B', marginBottom: '8px' }}>
-                            Total Discounts Given
+                        <div
+                          className={`report-stat-card ${revenueReportCardView === 'discounts' ? 'active-discount' : ''}`}
+                          onClick={() => setRevenueReportCardView('discounts')}
+                          role="button"
+                          tabIndex={0}
+                          title="Click to audit discounts and promotional deductions"
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                            <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748B' }}>Total Discounts Given</span>
+                            {revenueReportCardView === 'discounts' && (
+                              <span style={{ fontSize: '10px', background: 'rgba(217, 119, 6, 0.15)', color: '#D97706', padding: '1px 7px', borderRadius: '10px', fontWeight: 700 }}>Selected</span>
+                            )}
                           </div>
                           <div style={{ fontSize: '28px', fontWeight: 800, color: '#0F172A', lineHeight: 1.2, marginBottom: '8px' }}>
                             ₹{totalDiscountsGiven.toLocaleString('en-IN')}
                           </div>
-                          <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#D97706' }}>
-                            Promotions applied
+                          <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#D97706', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <Tag size={13} /> Promotions applied
                           </div>
                         </div>
 
                         {/* 3. GST Tax Collected (18%) */}
-                        <div style={{
-                          background: '#FFFFFF',
-                          border: '1px solid #E2E8F0',
-                          borderRadius: '12px',
-                          padding: '20px 24px',
-                          boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
-                        }}>
-                          <div style={{ fontSize: '12px', fontWeight: 600, color: '#64748B', marginBottom: '8px' }}>
-                            GST Tax Collected (18%)
+                        <div
+                          className={`report-stat-card ${revenueReportCardView === 'tax' ? 'active-tax' : ''}`}
+                          onClick={() => setRevenueReportCardView('tax')}
+                          role="button"
+                          tabIndex={0}
+                          title="Click to view GST tax collection ledger"
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                            <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748B' }}>GST Tax Collected (18%)</span>
+                            {revenueReportCardView === 'tax' && (
+                              <span style={{ fontSize: '10px', background: 'rgba(59, 130, 246, 0.15)', color: '#2563EB', padding: '1px 7px', borderRadius: '10px', fontWeight: 700 }}>Selected</span>
+                            )}
                           </div>
                           <div style={{ fontSize: '28px', fontWeight: 800, color: '#0F172A', lineHeight: 1.2, marginBottom: '8px' }}>
                             ₹{totalTaxCollected.toLocaleString('en-IN')}
                           </div>
-                          <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#64748B' }}>
-                            Filed &amp; recorded
+                          <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <ShieldCheck size={13} color="#2563EB" /> Filed &amp; recorded
                           </div>
                         </div>
                       </div>
 
-                      {/* Revenue Master Table (Matching Screenshot) */}
-                      <div style={{
-                        background: '#FFFFFF',
-                        border: '1px solid #E2E8F0',
-                        borderRadius: '12px',
-                        overflow: 'hidden',
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
-                        width: '100%',
-                        overflowX: 'auto'
-                      }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '780px' }}>
-                          <thead>
-                            <tr style={{ background: '#FFFFFF', borderBottom: '1px solid #E2E8F0' }}>
-                              <th style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700 }}>
-                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#D97706' }}>
-                                  <CalendarDays size={14} color="#D97706" /> Date
-                                </span>
-                              </th>
-                              <th style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700 }}>
-                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#0284C7' }}>
-                                  <Receipt size={14} color="#0284C7" /> Transactions Count
-                                </span>
-                              </th>
-                              <th style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700 }}>
-                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#10B981' }}>
-                                  <IndianRupee size={14} color="#10B981" /> Service Gross (₹)
-                                </span>
-                              </th>
-                              <th style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700 }}>
-                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#8B5CF6' }}>
-                                  <ShoppingBag size={14} color="#8B5CF6" /> Retail Product Gross (₹)
-                                </span>
-                              </th>
-                              <th style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700 }}>
-                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#059669' }}>
-                                  <IndianRupee size={14} color="#059669" /> Total Realized (₹)
-                                </span>
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {revenueReportRows.length === 0 ? (
-                              <tr>
-                                <td colSpan={5} style={{ padding: '60px 20px', textAlign: 'center' }}>
-                                  <div style={{ maxWidth: '380px', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', color: '#94A3B8' }}>
-                                    <Receipt size={36} color="#CBD5E1" />
-                                    <h4 style={{ margin: 0, fontSize: '16px', color: '#0F172A', fontWeight: 700 }}>No revenue transactions recorded yet</h4>
-                                    <p style={{ margin: 0, fontSize: '12.5px', color: '#64748B' }}>Complete client appointments or fast POS bills to generate financial revenue records.</p>
-                                  </div>
-                                </td>
-                              </tr>
-                            ) : (
-                              revenueReportRows.map((r, i) => (
-                                <tr key={i} style={{ borderBottom: i < revenueReportRows.length - 1 ? '1px solid #F1F5F9' : 'none' }}>
-                                  <td style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>{r.date}</td>
-                                  <td style={{ padding: '16px 20px', fontSize: '13px', color: '#334155' }}>{r.count}</td>
-                                  <td style={{ padding: '16px 20px', fontSize: '13px', color: '#334155' }}>₹{r.serviceGross.toLocaleString('en-IN')}</td>
-                                  <td style={{ padding: '16px 20px', fontSize: '13px', color: '#334155' }}>₹{r.retailGross.toLocaleString('en-IN')}</td>
-                                  <td style={{ padding: '16px 20px', fontSize: '13.5px', fontWeight: 800, color: '#0F172A' }}>₹{r.total.toLocaleString('en-IN')}</td>
-                                </tr>
-                              ))
-                            )}
-                          </tbody>
-                        </table>
+                      {/* Header bar for active report view */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px', flexWrap: 'wrap', gap: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#0F172A' }}>
+                            {revenueReportCardView === 'gross' && '📅 Daily Revenue Realized Breakdown'}
+                            {revenueReportCardView === 'discounts' && '🏷️ Discounts & Promotional Deductions Audit'}
+                            {revenueReportCardView === 'tax' && '🏛️ GST Tax Collected (18% Statutory Ledger)'}
+                          </h4>
+                          <span style={{
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            padding: '2px 8px',
+                            borderRadius: '12px',
+                            background: revenueReportCardView === 'gross' ? '#ECFDF5' : (revenueReportCardView === 'discounts' ? '#FFFBEB' : '#EFF6FF'),
+                            color: revenueReportCardView === 'gross' ? '#16A34A' : (revenueReportCardView === 'discounts' ? '#D97706' : '#2563EB')
+                          }}>
+                            {revenueReportCardView === 'gross' && `Total: ₹${totalGrossRevenue.toLocaleString('en-IN')}`}
+                            {revenueReportCardView === 'discounts' && `Total: ₹${totalDiscountsGiven.toLocaleString('en-IN')}`}
+                            {revenueReportCardView === 'tax' && `Total: ₹${totalTaxCollected.toLocaleString('en-IN')}`}
+                          </span>
+                        </div>
+
+                        {revenueReportCardView !== 'gross' && (
+                          <button
+                            type="button"
+                            onClick={() => setRevenueReportCardView('gross')}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              padding: '5px 12px',
+                              borderRadius: '20px',
+                              background: '#F1F5F9',
+                              border: '1px solid #CBD5E1',
+                              color: '#334155',
+                              fontSize: '12px',
+                              fontWeight: 600,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <ArrowLeft size={13} /> Back to Daily Revenue
+                          </button>
+                        )}
                       </div>
+
+                      {/* VIEW 1: GROSS REVENUE MASTER TABLE */}
+                      {revenueReportCardView === 'gross' && (
+                        <div style={{
+                          background: '#FFFFFF',
+                          border: '1px solid #E2E8F0',
+                          borderRadius: '12px',
+                          overflow: 'hidden',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                          width: '100%',
+                          overflowX: 'auto'
+                        }}>
+                          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '780px' }}>
+                            <thead>
+                              <tr style={{ background: '#FFFFFF', borderBottom: '1px solid #E2E8F0' }}>
+                                <th style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700 }}>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#D97706' }}>
+                                    <CalendarDays size={14} color="#D97706" /> Date
+                                  </span>
+                                </th>
+                                <th style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700 }}>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#0284C7' }}>
+                                    <Receipt size={14} color="#0284C7" /> Transactions Count
+                                  </span>
+                                </th>
+                                <th style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700 }}>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#10B981' }}>
+                                    <IndianRupee size={14} color="#10B981" /> Service Gross (₹)
+                                  </span>
+                                </th>
+                                <th style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700 }}>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#8B5CF6' }}>
+                                    <ShoppingBag size={14} color="#8B5CF6" /> Retail Product Gross (₹)
+                                  </span>
+                                </th>
+                                <th style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700 }}>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#059669' }}>
+                                    <IndianRupee size={14} color="#059669" /> Total Realized (₹)
+                                  </span>
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {revenueReportRows.length === 0 ? (
+                                <tr>
+                                  <td colSpan={5} style={{ padding: '60px 20px', textAlign: 'center' }}>
+                                    <div style={{ maxWidth: '380px', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', color: '#94A3B8' }}>
+                                      <Receipt size={36} color="#CBD5E1" />
+                                      <h4 style={{ margin: 0, fontSize: '16px', color: '#0F172A', fontWeight: 700 }}>No revenue transactions recorded yet</h4>
+                                      <p style={{ margin: 0, fontSize: '12.5px', color: '#64748B' }}>Complete client appointments or fast POS bills to generate financial revenue records.</p>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ) : (
+                                revenueReportRows.map((r, i) => (
+                                  <tr key={i} style={{ borderBottom: i < revenueReportRows.length - 1 ? '1px solid #F1F5F9' : 'none' }}>
+                                    <td style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>{r.date}</td>
+                                    <td style={{ padding: '16px 20px', fontSize: '13px', color: '#334155' }}>{r.count}</td>
+                                    <td style={{ padding: '16px 20px', fontSize: '13px', color: '#334155' }}>₹{r.serviceGross.toLocaleString('en-IN')}</td>
+                                    <td style={{ padding: '16px 20px', fontSize: '13px', color: '#334155' }}>₹{r.retailGross.toLocaleString('en-IN')}</td>
+                                    <td style={{ padding: '16px 20px', fontSize: '13.5px', fontWeight: 800, color: '#0F172A' }}>₹{r.total.toLocaleString('en-IN')}</td>
+                                  </tr>
+                                ))
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+
+                      {/* VIEW 2: DISCOUNTS GIVEN AUDIT TABLE */}
+                      {revenueReportCardView === 'discounts' && (
+                        <div style={{
+                          background: '#FFFFFF',
+                          border: '1px solid #E2E8F0',
+                          borderRadius: '12px',
+                          overflow: 'hidden',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                          width: '100%',
+                          overflowX: 'auto'
+                        }}>
+                          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '780px' }}>
+                            <thead>
+                              <tr style={{ background: '#FFFFFF', borderBottom: '1px solid #E2E8F0' }}>
+                                <th style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700 }}>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#D97706' }}>
+                                    <Receipt size={14} color="#D97706" /> Invoice #
+                                  </span>
+                                </th>
+                                <th style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700 }}>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#64748B' }}>
+                                    <CalendarDays size={14} color="#64748B" /> Date
+                                  </span>
+                                </th>
+                                <th style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700 }}>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#0284C7' }}>
+                                    <User size={14} color="#0284C7" /> Customer Name
+                                  </span>
+                                </th>
+                                <th style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700 }}>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#7C3AED' }}>
+                                    <CreditCard size={14} color="#7C3AED" /> Payment Method
+                                  </span>
+                                </th>
+                                <th style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700 }}>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#64748B' }}>
+                                    <IndianRupee size={14} color="#64748B" /> Original Bill (₹)
+                                  </span>
+                                </th>
+                                <th style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700 }}>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#D97706' }}>
+                                    <Tag size={14} color="#D97706" /> Discount Given (₹)
+                                  </span>
+                                </th>
+                                <th style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700 }}>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#16A34A' }}>
+                                    <IndianRupee size={14} color="#16A34A" /> Net Paid (₹)
+                                  </span>
+                                </th>
+                                <th style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700, textAlign: 'center' }}>
+                                  Action
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {(() => {
+                                const discountedInvoices = (data.invoices || []).filter(inv => (inv.discount || 0) > 0);
+                                if (discountedInvoices.length === 0) {
+                                  return (
+                                    <tr>
+                                      <td colSpan={8} style={{ padding: '60px 20px', textAlign: 'center' }}>
+                                        <div style={{ maxWidth: '380px', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', color: '#94A3B8' }}>
+                                          <Tag size={36} color="#CBD5E1" />
+                                          <h4 style={{ margin: 0, fontSize: '16px', color: '#0F172A', fontWeight: 700 }}>No discount vouchers applied</h4>
+                                          <p style={{ margin: 0, fontSize: '12.5px', color: '#64748B' }}>Bills with coupon or promotion discounts applied will appear in this audit log.</p>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  );
+                                }
+                                return discountedInvoices.map((inv, idx) => (
+                                  <tr key={inv.id || idx} style={{ borderBottom: idx < discountedInvoices.length - 1 ? '1px solid #F1F5F9' : 'none' }}>
+                                    <td style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>#{inv.id}</td>
+                                    <td style={{ padding: '16px 20px', fontSize: '13px', color: '#64748B' }}>{inv.date}</td>
+                                    <td style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 600, color: '#0F172A' }}>{inv.customerName || 'Walk-in Guest'}</td>
+                                    <td style={{ padding: '16px 20px', fontSize: '13px', color: '#334155' }}>
+                                      <span style={{ background: '#F1F5F9', padding: '3px 8px', borderRadius: '4px', fontSize: '11.5px', fontWeight: 600 }}>
+                                        {inv.paymentMethod || 'Cash'}
+                                      </span>
+                                    </td>
+                                    <td style={{ padding: '16px 20px', fontSize: '13px', color: '#64748B' }}>₹{(inv.subtotal || inv.totalAmount || 0).toLocaleString('en-IN')}</td>
+                                    <td style={{ padding: '16px 20px', fontSize: '13.5px', fontWeight: 800, color: '#D97706' }}>
+                                      -₹{(inv.discount || 0).toLocaleString('en-IN')}
+                                    </td>
+                                    <td style={{ padding: '16px 20px', fontSize: '13.5px', fontWeight: 800, color: '#16A34A' }}>₹{(inv.totalAmount || 0).toLocaleString('en-IN')}</td>
+                                    <td style={{ padding: '16px 20px', textAlign: 'center' }}>
+                                      <button
+                                        type="button"
+                                        onClick={() => onViewInvoice && onViewInvoice(inv)}
+                                        style={{
+                                          padding: '4px 10px',
+                                          fontSize: '11.5px',
+                                          fontWeight: 600,
+                                          background: '#F8FAFC',
+                                          border: '1px solid #CBD5E1',
+                                          borderRadius: '6px',
+                                          cursor: 'pointer',
+                                          color: '#0F172A'
+                                        }}
+                                      >
+                                        View Bill
+                                      </button>
+                                    </td>
+                                  </tr>
+                                ));
+                              })()}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+
+                      {/* VIEW 3: GST TAX COLLECTED TABLE */}
+                      {revenueReportCardView === 'tax' && (
+                        <div style={{
+                          background: '#FFFFFF',
+                          border: '1px solid #E2E8F0',
+                          borderRadius: '12px',
+                          overflow: 'hidden',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                          width: '100%',
+                          overflowX: 'auto'
+                        }}>
+                          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '820px' }}>
+                            <thead>
+                              <tr style={{ background: '#FFFFFF', borderBottom: '1px solid #E2E8F0' }}>
+                                <th style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700 }}>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#2563EB' }}>
+                                    <Receipt size={14} color="#2563EB" /> Invoice #
+                                  </span>
+                                </th>
+                                <th style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700 }}>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#64748B' }}>
+                                    <CalendarDays size={14} color="#64748B" /> Date
+                                  </span>
+                                </th>
+                                <th style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700 }}>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#0284C7' }}>
+                                    <User size={14} color="#0284C7" /> Customer Name
+                                  </span>
+                                </th>
+                                <th style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700 }}>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#64748B' }}>
+                                    <IndianRupee size={14} color="#64748B" /> Taxable Amount (₹)
+                                  </span>
+                                </th>
+                                <th style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700 }}>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#7C3AED' }}>
+                                    CGST (9%)
+                                  </span>
+                                </th>
+                                <th style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700 }}>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#7C3AED' }}>
+                                    SGST (9%)
+                                  </span>
+                                </th>
+                                <th style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700 }}>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#2563EB' }}>
+                                    <ShieldCheck size={14} color="#2563EB" /> Total GST 18% (₹)
+                                  </span>
+                                </th>
+                                <th style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700 }}>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#0F172A' }}>
+                                    Total Paid (₹)
+                                  </span>
+                                </th>
+                                <th style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700, textAlign: 'center' }}>
+                                  Action
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {(() => {
+                                const taxInvoices = (data.invoices || []).filter(inv => (inv.tax || 0) > 0 || (inv.totalAmount || 0) > 0);
+                                if (taxInvoices.length === 0) {
+                                  return (
+                                    <tr>
+                                      <td colSpan={9} style={{ padding: '60px 20px', textAlign: 'center' }}>
+                                        <div style={{ maxWidth: '380px', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', color: '#94A3B8' }}>
+                                          <ShieldCheck size={36} color="#CBD5E1" />
+                                          <h4 style={{ margin: 0, fontSize: '16px', color: '#0F172A', fontWeight: 700 }}>No GST tax invoices filed yet</h4>
+                                          <p style={{ margin: 0, fontSize: '12.5px', color: '#64748B' }}>18% GST collected on billed services and products will appear in this tax filing ledger.</p>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  );
+                                }
+                                return taxInvoices.map((inv, idx) => {
+                                  const taxVal = inv.tax || 0;
+                                  const halfTax = Math.round(taxVal / 2);
+                                  const taxable = (inv.subtotal || inv.totalAmount || 0) - (inv.discount || 0);
+                                  return (
+                                    <tr key={inv.id || idx} style={{ borderBottom: idx < taxInvoices.length - 1 ? '1px solid #F1F5F9' : 'none' }}>
+                                      <td style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>#{inv.id}</td>
+                                      <td style={{ padding: '16px 20px', fontSize: '13px', color: '#64748B' }}>{inv.date}</td>
+                                      <td style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 600, color: '#0F172A' }}>{inv.customerName || 'Walk-in Client'}</td>
+                                      <td style={{ padding: '16px 20px', fontSize: '13px', color: '#334155' }}>₹{Math.max(0, taxable).toLocaleString('en-IN')}</td>
+                                      <td style={{ padding: '16px 20px', fontSize: '13px', color: '#7C3AED' }}>₹{halfTax.toLocaleString('en-IN')}</td>
+                                      <td style={{ padding: '16px 20px', fontSize: '13px', color: '#7C3AED' }}>₹{(taxVal - halfTax).toLocaleString('en-IN')}</td>
+                                      <td style={{ padding: '16px 20px', fontSize: '13.5px', fontWeight: 800, color: '#2563EB' }}>₹{taxVal.toLocaleString('en-IN')}</td>
+                                      <td style={{ padding: '16px 20px', fontSize: '13.5px', fontWeight: 800, color: '#0F172A' }}>₹{(inv.totalAmount || 0).toLocaleString('en-IN')}</td>
+                                      <td style={{ padding: '16px 20px', textAlign: 'center' }}>
+                                        <button
+                                          type="button"
+                                          onClick={() => onViewInvoice && onViewInvoice(inv)}
+                                          style={{
+                                            padding: '4px 10px',
+                                            fontSize: '11.5px',
+                                            fontWeight: 600,
+                                            background: '#F8FAFC',
+                                            border: '1px solid #CBD5E1',
+                                            borderRadius: '6px',
+                                            cursor: 'pointer',
+                                            color: '#0F172A'
+                                          }}
+                                        >
+                                          View Bill
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  );
+                                });
+                              })()}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
                     </div>
                   )}
 
